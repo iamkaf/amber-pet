@@ -1,0 +1,47 @@
+{
+  "name": "amber-pet",
+  "displayName": "Amber Pet",
+  "description": "Spawn an interactive pet inside VS Code.",
+  "version": "0.0.1",
+  "publisher": "amber-pet",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.116.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:amberPet.spawn",
+    "onWebviewPanel:amberPet.panel"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "amberPet.spawn",
+        "title": "Spawn Pet",
+        "category": "Amber Pet"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run bundle",
+    "watch": "npm-run-all -p watch:*",
+    "watch:bundle": "node esbuild.mjs --watch",
+    "watch:types": "tsc --noEmit --watch --project tsconfig.json",
+    "bundle": "node esbuild.mjs",
+    "package": "npm run check-types && node esbuild.mjs --production",
+    "process-assets": "node scripts/process-assets.mjs",
+    "check-types": "tsc --noEmit --project tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/vscode": "^1.116.0",
+    "esbuild": "^0.28.0",
+    "npm-run-all": "^4.1.5",
+    "pngjs": "^7.0.0",
+    "typescript": "^6.0.3"
+  }
+}

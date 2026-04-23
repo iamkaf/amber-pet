@@ -1,0 +1,10 @@
+.vscode/**
+.vscode-test/**
+src/**
+node_modules/**
+scripts/**
+*.map
+tsconfig.json
+esbuild.mjs
+package-lock.json
+media/images/sheet*.png

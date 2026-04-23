@@ -1,0 +1,99 @@
+:root {
+  color-scheme: light dark;
+  --stage-bg: color-mix(in srgb, var(--vscode-editor-background) 82%, #f09a3e 18%);
+  --stage-grid: color-mix(in srgb, var(--vscode-editor-foreground) 13%, transparent);
+  --stage-line: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+  --pet-focus: var(--vscode-focusBorder);
+  --pet-size: clamp(184px, 38vmin, 288px);
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
+
+body {
+  font-family: var(--vscode-font-family);
+}
+
+.pet-stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-width: 280px;
+  min-height: 220px;
+  overflow: hidden;
+  background:
+    linear-gradient(125deg, transparent 0 39%, color-mix(in srgb, #d9792b 15%, transparent) 39% 41%, transparent 41%),
+    radial-gradient(circle at 73% 18%, color-mix(in srgb, #ffd166 18%, transparent), transparent 28%),
+    linear-gradient(var(--stage-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px),
+    var(--stage-bg);
+  background-size: auto, auto, 36px 36px, 36px 36px, auto;
+  cursor: default;
+}
+
+.pet-stage::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 27%;
+  background: linear-gradient(to top, color-mix(in srgb, #000000 9%, transparent), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.pet {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  z-index: 1;
+  width: var(--pet-size);
+  height: var(--pet-size);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  transform: translate(-50%, -50%);
+  touch-action: none;
+}
+
+.pet:focus-visible {
+  outline: 2px solid var(--pet-focus);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.pet.is-dragging {
+  cursor: grabbing;
+}
+
+.pet-sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 16px 18px color-mix(in srgb, #000000 24%, transparent));
+  pointer-events: none;
+  user-select: none;
+}
+
+.pet-shadow {
+  position: absolute;
+  left: 50%;
+  top: calc(52% + var(--pet-size) * .38);
+  width: calc(var(--pet-size) * .56);
+  height: calc(var(--pet-size) * .08);
+  border-radius: 999px;
+  background: color-mix(in srgb, #000000 24%, transparent);
+  filter: blur(9px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}

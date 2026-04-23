@@ -1,0 +1,911 @@
+{
+  "version": 1,
+  "frame": {
+    "width": 288,
+    "height": 288,
+    "defaultPivot": {
+      "x": 0.5,
+      "y": 1
+    }
+  },
+  "frames": {
+    "sheet1-r1-c1.png": {
+      "file": "sheet1-r1-c1.png",
+      "sheet": "sheet1",
+      "row": 1,
+      "column": 1,
+      "source": {
+        "x": 64,
+        "y": 21,
+        "width": 190,
+        "height": 254
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r1-c2.png": {
+      "file": "sheet1-r1-c2.png",
+      "sheet": "sheet1",
+      "row": 1,
+      "column": 2,
+      "source": {
+        "x": 297,
+        "y": 21,
+        "width": 189,
+        "height": 254
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r1-c3.png": {
+      "file": "sheet1-r1-c3.png",
+      "sheet": "sheet1",
+      "row": 1,
+      "column": 3,
+      "source": {
+        "x": 532,
+        "y": 21,
+        "width": 188,
+        "height": 254
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r1-c4.png": {
+      "file": "sheet1-r1-c4.png",
+      "sheet": "sheet1",
+      "row": 1,
+      "column": 4,
+      "source": {
+        "x": 767,
+        "y": 21,
+        "width": 187,
+        "height": 254
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r1-c5.png": {
+      "file": "sheet1-r1-c5.png",
+      "sheet": "sheet1",
+      "row": 1,
+      "column": 5,
+      "source": {
+        "x": 1001,
+        "y": 21,
+        "width": 212,
+        "height": 254
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r2-c1.png": {
+      "file": "sheet1-r2-c1.png",
+      "sheet": "sheet1",
+      "row": 2,
+      "column": 1,
+      "source": {
+        "x": 55,
+        "y": 279,
+        "width": 192,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r2-c2.png": {
+      "file": "sheet1-r2-c2.png",
+      "sheet": "sheet1",
+      "row": 2,
+      "column": 2,
+      "source": {
+        "x": 295,
+        "y": 281,
+        "width": 191,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r2-c3.png": {
+      "file": "sheet1-r2-c3.png",
+      "sheet": "sheet1",
+      "row": 2,
+      "column": 3,
+      "source": {
+        "x": 530,
+        "y": 282,
+        "width": 188,
+        "height": 230
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r2-c4.png": {
+      "file": "sheet1-r2-c4.png",
+      "sheet": "sheet1",
+      "row": 2,
+      "column": 4,
+      "source": {
+        "x": 764,
+        "y": 281,
+        "width": 189,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r2-c5.png": {
+      "file": "sheet1-r2-c5.png",
+      "sheet": "sheet1",
+      "row": 2,
+      "column": 5,
+      "source": {
+        "x": 998,
+        "y": 280,
+        "width": 215,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r3-c1.png": {
+      "file": "sheet1-r3-c1.png",
+      "sheet": "sheet1",
+      "row": 3,
+      "column": 1,
+      "source": {
+        "x": 54,
+        "y": 523,
+        "width": 194,
+        "height": 248
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r3-c2.png": {
+      "file": "sheet1-r3-c2.png",
+      "sheet": "sheet1",
+      "row": 3,
+      "column": 2,
+      "source": {
+        "x": 290,
+        "y": 522,
+        "width": 192,
+        "height": 249
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r3-c3.png": {
+      "file": "sheet1-r3-c3.png",
+      "sheet": "sheet1",
+      "row": 3,
+      "column": 3,
+      "source": {
+        "x": 521,
+        "y": 523,
+        "width": 196,
+        "height": 248
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r3-c4.png": {
+      "file": "sheet1-r3-c4.png",
+      "sheet": "sheet1",
+      "row": 3,
+      "column": 4,
+      "source": {
+        "x": 753,
+        "y": 521,
+        "width": 192,
+        "height": 250
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r3-c5.png": {
+      "file": "sheet1-r3-c5.png",
+      "sheet": "sheet1",
+      "row": 3,
+      "column": 5,
+      "source": {
+        "x": 983,
+        "y": 521,
+        "width": 197,
+        "height": 250
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r4-c1.png": {
+      "file": "sheet1-r4-c1.png",
+      "sheet": "sheet1",
+      "row": 4,
+      "column": 1,
+      "source": {
+        "x": 49,
+        "y": 771,
+        "width": 185,
+        "height": 250
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r4-c2.png": {
+      "file": "sheet1-r4-c2.png",
+      "sheet": "sheet1",
+      "row": 4,
+      "column": 2,
+      "source": {
+        "x": 281,
+        "y": 771,
+        "width": 184,
+        "height": 250
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r4-c3.png": {
+      "file": "sheet1-r4-c3.png",
+      "sheet": "sheet1",
+      "row": 4,
+      "column": 3,
+      "source": {
+        "x": 517,
+        "y": 771,
+        "width": 186,
+        "height": 250
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r4-c4.png": {
+      "file": "sheet1-r4-c4.png",
+      "sheet": "sheet1",
+      "row": 4,
+      "column": 4,
+      "source": {
+        "x": 748,
+        "y": 775,
+        "width": 213,
+        "height": 242
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r4-c5.png": {
+      "file": "sheet1-r4-c5.png",
+      "sheet": "sheet1",
+      "row": 4,
+      "column": 5,
+      "source": {
+        "x": 991,
+        "y": 773,
+        "width": 186,
+        "height": 253
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r5-c1.png": {
+      "file": "sheet1-r5-c1.png",
+      "sheet": "sheet1",
+      "row": 5,
+      "column": 1,
+      "source": {
+        "x": 49,
+        "y": 1016,
+        "width": 181,
+        "height": 223
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r5-c2.png": {
+      "file": "sheet1-r5-c2.png",
+      "sheet": "sheet1",
+      "row": 5,
+      "column": 2,
+      "source": {
+        "x": 260,
+        "y": 1050,
+        "width": 231,
+        "height": 168
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r5-c3.png": {
+      "file": "sheet1-r5-c3.png",
+      "sheet": "sheet1",
+      "row": 5,
+      "column": 3,
+      "source": {
+        "x": 520,
+        "y": 1031,
+        "width": 191,
+        "height": 206
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r5-c4.png": {
+      "file": "sheet1-r5-c4.png",
+      "sheet": "sheet1",
+      "row": 5,
+      "column": 4,
+      "source": {
+        "x": 739,
+        "y": 1046,
+        "width": 207,
+        "height": 191
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet1-r5-c5.png": {
+      "file": "sheet1-r5-c5.png",
+      "sheet": "sheet1",
+      "row": 5,
+      "column": 5,
+      "source": {
+        "x": 993,
+        "y": 1017,
+        "width": 179,
+        "height": 221
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r1-c1.png": {
+      "file": "sheet2-r1-c1.png",
+      "sheet": "sheet2",
+      "row": 1,
+      "column": 1,
+      "source": {
+        "x": 53,
+        "y": 26,
+        "width": 192,
+        "height": 260
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r1-c2.png": {
+      "file": "sheet2-r1-c2.png",
+      "sheet": "sheet2",
+      "row": 1,
+      "column": 2,
+      "source": {
+        "x": 282,
+        "y": 26,
+        "width": 191,
+        "height": 260
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r1-c3.png": {
+      "file": "sheet2-r1-c3.png",
+      "sheet": "sheet2",
+      "row": 1,
+      "column": 3,
+      "source": {
+        "x": 517,
+        "y": 26,
+        "width": 192,
+        "height": 260
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r1-c4.png": {
+      "file": "sheet2-r1-c4.png",
+      "sheet": "sheet2",
+      "row": 1,
+      "column": 4,
+      "source": {
+        "x": 753,
+        "y": 26,
+        "width": 190,
+        "height": 260
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r1-c5.png": {
+      "file": "sheet2-r1-c5.png",
+      "sheet": "sheet2",
+      "row": 1,
+      "column": 5,
+      "source": {
+        "x": 989,
+        "y": 26,
+        "width": 228,
+        "height": 260
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r2-c1.png": {
+      "file": "sheet2-r2-c1.png",
+      "sheet": "sheet2",
+      "row": 2,
+      "column": 1,
+      "source": {
+        "x": 30,
+        "y": 286,
+        "width": 226,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r2-c2.png": {
+      "file": "sheet2-r2-c2.png",
+      "sheet": "sheet2",
+      "row": 2,
+      "column": 2,
+      "source": {
+        "x": 270,
+        "y": 286,
+        "width": 229,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r2-c3.png": {
+      "file": "sheet2-r2-c3.png",
+      "sheet": "sheet2",
+      "row": 2,
+      "column": 3,
+      "source": {
+        "x": 504,
+        "y": 286,
+        "width": 227,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r2-c4.png": {
+      "file": "sheet2-r2-c4.png",
+      "sheet": "sheet2",
+      "row": 2,
+      "column": 4,
+      "source": {
+        "x": 739,
+        "y": 286,
+        "width": 235,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r2-c5.png": {
+      "file": "sheet2-r2-c5.png",
+      "sheet": "sheet2",
+      "row": 2,
+      "column": 5,
+      "source": {
+        "x": 996,
+        "y": 287,
+        "width": 238,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r3-c1.png": {
+      "file": "sheet2-r3-c1.png",
+      "sheet": "sheet2",
+      "row": 3,
+      "column": 1,
+      "source": {
+        "x": 58,
+        "y": 514,
+        "width": 193,
+        "height": 243
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r3-c2.png": {
+      "file": "sheet2-r3-c2.png",
+      "sheet": "sheet2",
+      "row": 3,
+      "column": 2,
+      "source": {
+        "x": 296,
+        "y": 514,
+        "width": 183,
+        "height": 243
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r3-c3.png": {
+      "file": "sheet2-r3-c3.png",
+      "sheet": "sheet2",
+      "row": 3,
+      "column": 3,
+      "source": {
+        "x": 536,
+        "y": 516,
+        "width": 185,
+        "height": 241
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r3-c4.png": {
+      "file": "sheet2-r3-c4.png",
+      "sheet": "sheet2",
+      "row": 3,
+      "column": 4,
+      "source": {
+        "x": 766,
+        "y": 517,
+        "width": 191,
+        "height": 241
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r3-c5.png": {
+      "file": "sheet2-r3-c5.png",
+      "sheet": "sheet2",
+      "row": 3,
+      "column": 5,
+      "source": {
+        "x": 1004,
+        "y": 517,
+        "width": 200,
+        "height": 240
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r4-c1.png": {
+      "file": "sheet2-r4-c1.png",
+      "sheet": "sheet2",
+      "row": 4,
+      "column": 1,
+      "source": {
+        "x": 35,
+        "y": 752,
+        "width": 210,
+        "height": 239
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r4-c2.png": {
+      "file": "sheet2-r4-c2.png",
+      "sheet": "sheet2",
+      "row": 4,
+      "column": 2,
+      "source": {
+        "x": 277,
+        "y": 753,
+        "width": 209,
+        "height": 238
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r4-c3.png": {
+      "file": "sheet2-r4-c3.png",
+      "sheet": "sheet2",
+      "row": 4,
+      "column": 3,
+      "source": {
+        "x": 513,
+        "y": 753,
+        "width": 207,
+        "height": 238
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r4-c4.png": {
+      "file": "sheet2-r4-c4.png",
+      "sheet": "sheet2",
+      "row": 4,
+      "column": 4,
+      "source": {
+        "x": 750,
+        "y": 754,
+        "width": 210,
+        "height": 237
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r4-c5.png": {
+      "file": "sheet2-r4-c5.png",
+      "sheet": "sheet2",
+      "row": 4,
+      "column": 5,
+      "source": {
+        "x": 992,
+        "y": 753,
+        "width": 213,
+        "height": 238
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r5-c1.png": {
+      "file": "sheet2-r5-c1.png",
+      "sheet": "sheet2",
+      "row": 5,
+      "column": 1,
+      "source": {
+        "x": 59,
+        "y": 988,
+        "width": 178,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r5-c2.png": {
+      "file": "sheet2-r5-c2.png",
+      "sheet": "sheet2",
+      "row": 5,
+      "column": 2,
+      "source": {
+        "x": 297,
+        "y": 990,
+        "width": 183,
+        "height": 231
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r5-c3.png": {
+      "file": "sheet2-r5-c3.png",
+      "sheet": "sheet2",
+      "row": 5,
+      "column": 3,
+      "source": {
+        "x": 533,
+        "y": 991,
+        "width": 182,
+        "height": 230
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r5-c4.png": {
+      "file": "sheet2-r5-c4.png",
+      "sheet": "sheet2",
+      "row": 5,
+      "column": 4,
+      "source": {
+        "x": 767,
+        "y": 992,
+        "width": 184,
+        "height": 230
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9861
+      }
+    },
+    "sheet2-r5-c5.png": {
+      "file": "sheet2-r5-c5.png",
+      "sheet": "sheet2",
+      "row": 5,
+      "column": 5,
+      "source": {
+        "x": 1002,
+        "y": 991,
+        "width": 207,
+        "height": 232
+      },
+      "pivot": {
+        "x": 0.4983,
+        "y": 0.9861
+      }
+    }
+  },
+  "animations": {
+    "idle": {
+      "description": "Calm standing idle loop.",
+      "loop": true,
+      "fps": 5,
+      "frames": [
+        "sheet1-r1-c1.png",
+        "sheet1-r1-c2.png",
+        "sheet1-r1-c3.png",
+        "sheet1-r1-c4.png",
+        "sheet1-r1-c5.png"
+      ]
+    },
+    "bored": {
+      "description": "Bored loop before Amber falls asleep.",
+      "loop": true,
+      "fps": 3,
+      "frames": [
+        "sheet1-r4-c1.png",
+        "sheet1-r4-c2.png",
+        "sheet1-r4-c3.png",
+        "sheet1-r4-c4.png",
+        "sheet1-r4-c5.png"
+      ]
+    },
+    "sleep": {
+      "description": "Sleeping loop after the user has been idle for a while.",
+      "loop": true,
+      "fps": 2,
+      "frames": [
+        "sheet1-r5-c1.png",
+        "sheet1-r5-c2.png",
+        "sheet1-r5-c3.png",
+        "sheet1-r5-c4.png",
+        "sheet1-r5-c5.png"
+      ]
+    },
+    "wave": {
+      "description": "Greeting animation when the panel opens or Amber spawns.",
+      "loop": false,
+      "fps": 5,
+      "frames": [
+        "sheet1-r3-c1.png",
+        "sheet1-r3-c2.png",
+        "sheet1-r3-c3.png",
+        "sheet1-r3-c4.png",
+        "sheet1-r3-c5.png"
+      ]
+    },
+    "cheering": {
+      "description": "Typing reaction with an excited wave.",
+      "loop": false,
+      "fps": 7,
+      "frames": [
+        "sheet1-r3-c1.png",
+        "sheet1-r3-c2.png",
+        "sheet1-r3-c3.png",
+        "sheet1-r3-c4.png",
+        "sheet1-r3-c5.png"
+      ]
+    },
+    "wow": {
+      "description": "Typing reaction with a surprised expression.",
+      "loop": false,
+      "fps": 6,
+      "frames": [
+        "sheet2-r3-c1.png",
+        "sheet2-r3-c2.png",
+        "sheet2-r3-c3.png",
+        "sheet2-r3-c4.png",
+        "sheet2-r3-c5.png"
+      ]
+    },
+    "headpat": {
+      "description": "Headpat animation when Amber is clicked.",
+      "loop": false,
+      "fps": 7,
+      "frames": [
+        "sheet2-r1-c1.png",
+        "sheet2-r1-c2.png",
+        "sheet2-r1-c3.png",
+        "sheet2-r1-c4.png",
+        "sheet2-r1-c5.png"
+      ]
+    },
+    "dragged": {
+      "description": "Animation shown while Amber is being dragged.",
+      "loop": true,
+      "fps": 6,
+      "frames": [
+        "sheet2-r2-c1.png",
+        "sheet2-r2-c2.png",
+        "sheet2-r2-c3.png",
+        "sheet2-r2-c4.png",
+        "sheet2-r2-c5.png"
+      ]
+    }
+  }
+}
