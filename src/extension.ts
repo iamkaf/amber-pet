@@ -10,7 +10,7 @@ type WebviewMessage =
 
 type WebviewActivityMessage = {
   type: 'activity';
-  activity: 'spawn' | 'typing' | 'editorOpened';
+  activity: 'spawn' | 'typing';
 };
 
 type WebviewConfigMessage = {
@@ -20,6 +20,15 @@ type WebviewConfigMessage = {
     assets: {
       images: string;
       frameBaseUri: string;
+      sounds: {
+        aprehensive: string;
+        aprehensive3: string;
+        curious: string;
+        dropped1: string;
+        dropped2: string;
+        happy: string;
+        startled: string;
+      };
     };
     manifest: unknown;
   };
@@ -32,7 +41,6 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(commandId, () => controller.spawnOrReveal()),
     controller,
     vscode.workspace.onDidChangeTextDocument((event) => controller.handleTextDocumentChange(event)),
-    vscode.window.onDidChangeActiveTextEditor((editor) => controller.handleActiveEditorChange(editor)),
     vscode.window.registerWebviewPanelSerializer(viewType, {
       async deserializeWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
         controller.restore(panel);
@@ -142,14 +150,6 @@ class AmberPetController implements vscode.Disposable {
     this.postActivity('typing');
   }
 
-  handleActiveEditorChange(editor: vscode.TextEditor | undefined): void {
-    if (!editor) {
-      return;
-    }
-
-    this.postActivity('editorOpened');
-  }
-
   private async sendInitialState(panel: vscode.WebviewPanel): Promise<void> {
     try {
       await panel.webview.postMessage(await this.getConfigMessage(panel.webview));
@@ -181,7 +181,13 @@ class AmberPetController implements vscode.Disposable {
   <main class="pet-stage" aria-label="Amber Pet playground">
     <div class="pet-shadow" aria-hidden="true"></div>
     <button class="pet" type="button" aria-label="Pet Amber">
-      <img class="pet-sprite" alt="" draggable="false">
+      <span class="pet-hover-layer" aria-hidden="true">
+        <span class="pet-motion-layer">
+          <span class="pet-direction-layer">
+            <img class="pet-sprite" alt="" draggable="false">
+          </span>
+        </span>
+      </span>
     </button>
   </main>
   <script nonce="${nonce}" src="${scriptUri}"></script>
@@ -194,6 +200,7 @@ class AmberPetController implements vscode.Disposable {
     const frameBaseUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, 'media', 'images', 'processed')
     );
+    const audioBaseUri = vscode.Uri.joinPath(this.context.extensionUri, 'media', 'audio');
     const manifestUri = vscode.Uri.joinPath(
       this.context.extensionUri,
       'media',
@@ -209,7 +216,16 @@ class AmberPetController implements vscode.Disposable {
         extensionVersion: String(this.context.extension.packageJSON.version),
         assets: {
           images: imageBaseUri.toString(),
-          frameBaseUri: frameBaseUri.toString()
+          frameBaseUri: frameBaseUri.toString(),
+          sounds: {
+            aprehensive: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'aprehensive.mp3')).toString(),
+            aprehensive3: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'aprehensive3.mp3')).toString(),
+            curious: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'curious.mp3')).toString(),
+            dropped1: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'dropped1.mp3')).toString(),
+            dropped2: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'dropped2.mp3')).toString(),
+            happy: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'happy.mp3')).toString(),
+            startled: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'startled.mp3')).toString()
+          }
         },
         manifest: JSON.parse(Buffer.from(manifestBytes).toString('utf8')) as unknown
       }

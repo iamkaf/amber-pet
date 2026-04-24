@@ -8,9 +8,10 @@ Amber Pet adds a small animated companion to VS Code. Spawn Amber from the Comma
 - Use the `$(sparkle) Amber Pet` status bar item for quick access.
 - Drag Amber around the pet panel.
 - Click Amber, or press `Enter`/`Space` while she is focused, to play the headpat animation.
-- Amber waves when she spawns or when you switch editors.
+- Amber waves when she spawns.
 - Amber reacts to typing with cheering and wow animations, throttled so she stays pleasant.
 - Amber idles, gets bored after sustained inactivity, then falls asleep.
+- Amber plays short reaction sounds when you headpat, pick her up, or drop her.
 - The pet panel restores after VS Code restarts when it was left open.
 
 ## Development
@@ -56,3 +57,17 @@ npm run process-assets
 ```
 
 The processor detects transparent sprite components, orders them by visual row and column, normalizes each frame onto a stable canvas, and writes all processed sprite frames used by the extension and future animation composition tools.
+
+## Audio Assets
+
+Reaction sounds live in `media/audio/`:
+
+- `aprehensive.mp3`
+- `aprehensive3.mp3`
+- `curious.mp3`
+- `dropped1.mp3`
+- `dropped2.mp3`
+- `happy.mp3`
+- `startled.mp3`
+
+The webview loads them as local extension resources and plays them only in response to direct interactions with Amber.

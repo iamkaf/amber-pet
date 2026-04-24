@@ -21,32 +21,64 @@ const animationDefinitions = {
   idle: {
     description: 'Calm standing idle loop.',
     loop: true,
-    fps: 5,
-    frames: range('sheet1', 0, 0, 5)
+    fps: 2,
+    frames: [
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 2),
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 3),
+      frame('sheet1', 0, 3)
+    ]
   },
   bored: {
     description: 'Bored loop before Amber falls asleep.',
     loop: true,
-    fps: 3,
-    frames: range('sheet1', 3, 0, 5)
+    fps: 1,
+    frames: [
+      frame('sheet1', 3, 0),
+      frame('sheet1', 3, 0),
+      frame('sheet1', 3, 2),
+      frame('sheet1', 3, 2),
+      frame('sheet1', 3, 3),
+      frame('sheet1', 3, 3),
+      frame('sheet1', 3, 3),
+      frame('sheet1', 3, 3),
+      frame('sheet1', 3, 4)
+    ]
   },
   sleep: {
     description: 'Sleeping loop after the user has been idle for a while.',
     loop: true,
-    fps: 2,
-    frames: range('sheet1', 4, 0, 5)
+    fps: 1,
+    frames: [
+      frame('sheet1', 4, 1)
+    ]
   },
   wave: {
     description: 'Greeting animation when the panel opens or Amber spawns.',
     loop: false,
-    fps: 5,
-    frames: range('sheet1', 2, 0, 5)
+    fps: 3,
+    frames: [
+      frame('sheet2', 3, 1),
+      frame('sheet2', 3, 1),
+      frame('sheet2', 3, 3),
+      frame('sheet2', 3, 3),
+      frame('sheet2', 3, 1),
+      frame('sheet2', 3, 1),
+      frame('sheet2', 3, 3),
+      frame('sheet2', 3, 3)
+    ]
   },
   cheering: {
     description: 'Typing reaction with an excited wave.',
     loop: false,
-    fps: 7,
-    frames: range('sheet1', 2, 0, 5)
+    fps: 8,
+    frames: range('sheet2', 2, 0, 5)
   },
   wow: {
     description: 'Typing reaction with a surprised expression.',
@@ -57,14 +89,31 @@ const animationDefinitions = {
   headpat: {
     description: 'Headpat animation when Amber is clicked.',
     loop: false,
-    fps: 7,
-    frames: range('sheet2', 0, 0, 5)
+    fps: 4,
+    frames: [
+      frame('sheet2', 0, 0),
+      frame('sheet2', 0, 1),
+      frame('sheet2', 0, 2)
+    ]
   },
   dragged: {
     description: 'Animation shown while Amber is being dragged.',
     loop: true,
-    fps: 6,
-    frames: range('sheet2', 1, 0, 5)
+    fps: 3,
+    frames: [
+      frame('sheet2', 1, 0),
+      frame('sheet2', 1, 1),
+      frame('sheet2', 1, 2)
+    ]
+  },
+  dropRecovery: {
+    description: 'Recovery animation after Amber is dropped.',
+    loop: false,
+    fps: 3,
+    frames: [
+      frame('sheet1', 4, 4),
+      frame('sheet1', 3, 3)
+    ]
   }
 };
 
@@ -73,6 +122,7 @@ const frameBounds = new Map();
 const frameIds = new Map();
 const frameManifestEntries = {};
 let generatedFrames = 0;
+const existingManifest = await readExistingManifest();
 
 await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });
@@ -103,7 +153,7 @@ for (const sheetName of Object.keys(sheetFiles)) {
         row: row + 1,
         column: column + 1,
         source: extractedFrame.source,
-        pivot: extractedFrame.pivot
+        pivot: existingManifest?.frames?.[outputName]?.pivot ?? extractedFrame.pivot
       };
       generatedFrames += 1;
     }
@@ -133,6 +183,18 @@ const manifest = {
 
 await writeFile(join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`Generated ${generatedFrames} transparent Amber Pet frames in ${outputDir}`);
+
+async function readExistingManifest() {
+  try {
+    return JSON.parse(await readFile(join(outputDir, 'manifest.json'), 'utf8'));
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return undefined;
+    }
+
+    throw error;
+  }
+}
 
 function detectFrameBounds(sheetName, png) {
   const components = findComponents(png)

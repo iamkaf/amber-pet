@@ -53,7 +53,7 @@
         "height": 254
       },
       "pivot": {
-        "x": 0.5,
+        "x": 0.5035,
         "y": 0.9861
       }
     },
@@ -69,7 +69,7 @@
         "height": 254
       },
       "pivot": {
-        "x": 0.4983,
+        "x": 0.4948,
         "y": 0.9861
       }
     },
@@ -814,23 +814,32 @@
     "idle": {
       "description": "Calm standing idle loop.",
       "loop": true,
-      "fps": 5,
+      "fps": 2,
       "frames": [
-        "sheet1-r1-c1.png",
-        "sheet1-r1-c2.png",
+        "sheet1-r1-c4.png",
+        "sheet1-r1-c4.png",
+        "sheet1-r1-c4.png",
+        "sheet1-r1-c4.png",
+        "sheet1-r1-c4.png",
         "sheet1-r1-c3.png",
         "sheet1-r1-c4.png",
-        "sheet1-r1-c5.png"
+        "sheet1-r1-c4.png",
+        "sheet1-r1-c4.png",
+        "sheet1-r1-c4.png"
       ]
     },
     "bored": {
       "description": "Bored loop before Amber falls asleep.",
       "loop": true,
-      "fps": 3,
+      "fps": 1,
       "frames": [
         "sheet1-r4-c1.png",
-        "sheet1-r4-c2.png",
+        "sheet1-r4-c1.png",
         "sheet1-r4-c3.png",
+        "sheet1-r4-c3.png",
+        "sheet1-r4-c4.png",
+        "sheet1-r4-c4.png",
+        "sheet1-r4-c4.png",
         "sheet1-r4-c4.png",
         "sheet1-r4-c5.png"
       ]
@@ -838,73 +847,79 @@
     "sleep": {
       "description": "Sleeping loop after the user has been idle for a while.",
       "loop": true,
-      "fps": 2,
+      "fps": 1,
       "frames": [
-        "sheet1-r5-c1.png",
-        "sheet1-r5-c2.png",
-        "sheet1-r5-c3.png",
-        "sheet1-r5-c4.png",
-        "sheet1-r5-c5.png"
+        "sheet1-r5-c2.png"
       ]
     },
     "wave": {
       "description": "Greeting animation when the panel opens or Amber spawns.",
       "loop": false,
-      "fps": 5,
+      "fps": 3,
       "frames": [
-        "sheet1-r3-c1.png",
-        "sheet1-r3-c2.png",
-        "sheet1-r3-c3.png",
-        "sheet1-r3-c4.png",
-        "sheet1-r3-c5.png"
+        "sheet2-r4-c2.png",
+        "sheet2-r4-c2.png",
+        "sheet2-r4-c4.png",
+        "sheet2-r4-c4.png",
+        "sheet2-r4-c2.png",
+        "sheet2-r4-c2.png",
+        "sheet2-r4-c4.png",
+        "sheet2-r4-c4.png"
       ]
     },
     "cheering": {
       "description": "Typing reaction with an excited wave.",
       "loop": false,
-      "fps": 7,
+      "fps": 2,
       "frames": [
-        "sheet1-r3-c1.png",
-        "sheet1-r3-c2.png",
-        "sheet1-r3-c3.png",
-        "sheet1-r3-c4.png",
-        "sheet1-r3-c5.png"
+        "sheet2-r3-c1.png",
+        "sheet2-r3-c1.png",
+        "sheet2-r3-c1.png",
+        "sheet2-r3-c1.png"
       ]
     },
     "wow": {
       "description": "Typing reaction with a surprised expression.",
       "loop": false,
-      "fps": 6,
+      "fps": 2,
       "frames": [
-        "sheet2-r3-c1.png",
-        "sheet2-r3-c2.png",
-        "sheet2-r3-c3.png",
-        "sheet2-r3-c4.png",
-        "sheet2-r3-c5.png"
+        "sheet1-r3-c1.png",
+        "sheet1-r3-c1.png",
+        "sheet1-r3-c1.png",
+        "sheet1-r3-c1.png"
       ]
     },
     "headpat": {
       "description": "Headpat animation when Amber is clicked.",
       "loop": false,
-      "fps": 7,
+      "fps": 4,
       "frames": [
         "sheet2-r1-c1.png",
         "sheet2-r1-c2.png",
-        "sheet2-r1-c3.png",
-        "sheet2-r1-c4.png",
-        "sheet2-r1-c5.png"
+        "sheet2-r1-c3.png"
       ]
     },
     "dragged": {
       "description": "Animation shown while Amber is being dragged.",
       "loop": true,
-      "fps": 6,
+      "fps": 3,
       "frames": [
         "sheet2-r2-c1.png",
         "sheet2-r2-c2.png",
-        "sheet2-r2-c3.png",
-        "sheet2-r2-c4.png",
-        "sheet2-r2-c5.png"
+        "sheet2-r2-c3.png"
+      ]
+    },
+    "dropRecovery": {
+      "description": "Recovery animation after Amber is dropped.",
+      "loop": false,
+      "fps": 4,
+      "frames": [
+        "sheet1-r5-c2.png",
+        "sheet1-r5-c2.png",
+        "sheet1-r4-c4.png",
+        "sheet1-r4-c4.png",
+        "sheet1-r4-c4.png",
+        "sheet1-r4-c4.png"
       ]
     }
   }
