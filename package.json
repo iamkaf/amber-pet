@@ -1,23 +1,54 @@
 {
   "name": "amber-pet",
   "displayName": "Amber Pet",
-  "description": "Spawn an interactive pet inside VS Code.",
   "version": "0.0.1",
-  "publisher": "amber-pet",
-  "license": "MIT",
-  "engines": {
-    "vscode": "^1.116.0"
-  },
+  "description": "Spawn an interactive pet inside VS Code.",
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onStartupFinished",
-    "onCommand:amberPet.spawn",
-    "onView:amberPet.view",
-    "onWebviewPanel:amberPet.panel"
+  "keywords": [
+    "amber",
+    "companion",
+    "cute",
+    "interactive",
+    "pet"
   ],
+  "homepage": "https://github.com/iamkaf/amber-pet#readme",
+  "bugs": {
+    "url": "https://github.com/iamkaf/amber-pet/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iamkaf/amber-pet.git"
+  },
+  "publisher": "amber-pet",
   "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run bundle",
+    "ci": "npm run check-types && npm run lint && npm run format:check && npm run package",
+    "watch": "npm-run-all -p watch:*",
+    "watch:bundle": "node esbuild.mjs --watch",
+    "watch:types": "tsc --noEmit --watch --project tsconfig.json",
+    "bundle": "node esbuild.mjs",
+    "package": "npm run check-types && node esbuild.mjs --production",
+    "process-assets": "node scripts/process-assets.mjs",
+    "check-types": "tsc --noEmit --project tsconfig.json",
+    "lint": "oxlint src media/amberPet.js scripts --tsconfig tsconfig.json",
+    "format": "oxfmt --write src media/amberPet.js scripts package.json README.md esbuild.mjs",
+    "format:check": "oxfmt --check src media/amberPet.js scripts package.json README.md esbuild.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/vscode": "^1.116.0",
+    "esbuild": "^0.28.0",
+    "npm-run-all": "^4.1.5",
+    "oxfmt": "^0.46.0",
+    "oxlint": "^1.61.0",
+    "pngjs": "^7.0.0",
+    "typescript": "^6.0.3"
+  },
   "contributes": {
     "views": {
       "explorer": [
@@ -33,26 +64,44 @@
         "command": "amberPet.spawn",
         "title": "Spawn Pet",
         "category": "Amber Pet"
+      },
+      {
+        "command": "amberPet.resetPosition",
+        "title": "Reset Pet Position",
+        "category": "Amber Pet"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Amber Pet",
+      "properties": {
+        "amberPet.sound.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Amber Pet reaction sounds."
+        },
+        "amberPet.sound.volume": {
+          "type": "number",
+          "default": 45,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Amber Pet reaction sound volume, as a percentage."
+        }
+      }
+    }
   },
-  "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "npm run check-types && npm run bundle",
-    "watch": "npm-run-all -p watch:*",
-    "watch:bundle": "node esbuild.mjs --watch",
-    "watch:types": "tsc --noEmit --watch --project tsconfig.json",
-    "bundle": "node esbuild.mjs",
-    "package": "npm run check-types && node esbuild.mjs --production",
-    "process-assets": "node scripts/process-assets.mjs",
-    "check-types": "tsc --noEmit --project tsconfig.json"
+  "activationEvents": [
+    "onCommand:amberPet.resetPosition",
+    "onCommand:amberPet.spawn",
+    "onStartupFinished",
+    "onView:amberPet.view",
+    "onWebviewPanel:amberPet.panel"
+  ],
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#2f2530",
+    "theme": "dark"
   },
-  "devDependencies": {
-    "@types/node": "^24.0.0",
-    "@types/vscode": "^1.116.0",
-    "esbuild": "^0.28.0",
-    "npm-run-all": "^4.1.5",
-    "pngjs": "^7.0.0",
-    "typescript": "^6.0.3"
+  "engines": {
+    "vscode": "^1.116.0"
   }
 }

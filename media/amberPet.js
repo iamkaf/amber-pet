@@ -1,11 +1,12 @@
 (() => {
   const vscode = acquireVsCodeApi();
-  const pet = document.querySelector('.pet');
-  const sprite = document.querySelector('.pet-sprite');
-  const shadow = document.querySelector('.pet-shadow');
-  const stage = document.querySelector('.pet-stage');
-  const backgroundLayers = Array.from(document.querySelectorAll('.room-background-layer'));
-  const backgroundControls = document.querySelector('.background-controls');
+  const pet = document.querySelector(".pet");
+  const sprite = document.querySelector(".pet-sprite");
+  const shadow = document.querySelector(".pet-shadow");
+  const stage = document.querySelector(".pet-stage");
+  const backgroundLayers = Array.from(document.querySelectorAll(".room-background-layer"));
+  const backgroundControls = document.querySelector(".background-controls");
+  const soundToggle = document.querySelector("[data-sound-toggle]");
   const savedState = vscode.getState() || {};
   const defaultState = {
     x: 0.5,
@@ -13,17 +14,18 @@
     backgroundId: undefined,
     backgroundName: undefined,
     lastUserActivityAt: Date.now(),
-    nextTypingReaction: 'cheering',
-    hasPlayedIntro: false
+    nextTypingReaction: "cheering",
+    hasPlayedIntro: false,
+    soundMuted: false,
   };
   const state = {
     ...defaultState,
-    ...savedState
+    ...savedState,
   };
   const idleTimings = {
     boredAfterMs: 45_000,
     sleepAfterMs: 135_000,
-    typingCooldownMs: 3_000
+    typingCooldownMs: 3_000,
   };
   const backgroundVariantBreakpointPx = 520;
   const soundCooldowns = {
@@ -33,7 +35,11 @@
     dropped1: 700,
     dropped2: 700,
     happy: 200,
-    startled: 700
+    startled: 700,
+  };
+  const defaultSettings = {
+    soundEnabled: true,
+    soundVolume: 0.45,
   };
   const dragFeel = {
     anchorLerp: 0.055,
@@ -41,7 +47,7 @@
     dropOffsetPx: 20,
     headAnchorX: 0.5,
     headAnchorY: 0.28,
-    positionLerp: 0.24
+    positionLerp: 0.24,
   };
   const gravityFeel = {
     acceleration: 0.0018,
@@ -49,11 +55,12 @@
     maxFloorInsetPx: 92,
     maxVelocity: 1.1,
     minFloorInsetPx: 34,
-    settleDistancePx: 0.8
+    settleDistancePx: 0.8,
   };
 
   let config = null;
   let manifest = null;
+  let settings = { ...defaultSettings };
   let sounds = {};
   let lastSoundAt = {};
   let nextApprehensiveSoundIndex = 0;
@@ -62,7 +69,7 @@
   let ambientTimer = undefined;
   let currentAnimation = null;
   let currentFrameIndex = 0;
-  let currentMode = 'ambient';
+  let currentMode = "ambient";
   let lastTypingReactionAt = 0;
   let motionClass = undefined;
   let isHoverArmed = true;
@@ -88,7 +95,8 @@
       backgroundName: state.backgroundName,
       lastUserActivityAt: state.lastUserActivityAt,
       nextTypingReaction: state.nextTypingReaction,
-      hasPlayedIntro: state.hasPlayedIntro
+      hasPlayedIntro: state.hasPlayedIntro,
+      soundMuted: state.soundMuted,
     });
   }
 
@@ -97,17 +105,17 @@
   }
 
   function frameUrl(frameName) {
-    return `${config.assets.frameBaseUri.replace(/\/$/, '')}/${frameName}`;
+    return `${config.assets.frameBaseUri.replace(/\/$/, "")}/${frameName}`;
   }
 
   function setupBackground() {
     const backgrounds = config.assets.backgrounds || [];
 
     if (backgrounds.length === 0) {
-      stage.classList.remove('has-room-background');
+      stage.classList.remove("has-room-background");
       backgroundLayers.forEach((layer) => {
-        layer.style.removeProperty('background-image');
-        layer.classList.remove('is-active');
+        layer.style.removeProperty("background-image");
+        layer.classList.remove("is-active");
       });
       backgroundControls.hidden = true;
       return;
@@ -116,7 +124,10 @@
     let selected =
       backgrounds.find((background) => background.id === state.backgroundId) ||
       backgrounds.find((background) => {
-        return background.wide.name === state.backgroundName || background.narrow.name === state.backgroundName;
+        return (
+          background.wide.name === state.backgroundName ||
+          background.narrow.name === state.backgroundName
+        );
       });
 
     if (!selected) {
@@ -136,7 +147,7 @@
   function setBackground(background, options = {}) {
     currentBackground = background;
     state.backgroundId = background.id;
-    stage.classList.add('has-room-background');
+    stage.classList.add("has-room-background");
     applyBackgroundVariant(options);
     persist();
   }
@@ -155,19 +166,21 @@
     state.backgroundName = variant.name;
 
     if (backgroundLayers.length < 2) {
-      stage.style.setProperty('--room-background-image', `url("${variant.uri}")`);
+      stage.style.setProperty("--room-background-image", `url("${variant.uri}")`);
       return;
     }
 
-    const nextLayerIndex = options.animate ? 1 - activeBackgroundLayerIndex : activeBackgroundLayerIndex;
+    const nextLayerIndex = options.animate
+      ? 1 - activeBackgroundLayerIndex
+      : activeBackgroundLayerIndex;
     const nextLayer = backgroundLayers[nextLayerIndex];
     const previousLayer = backgroundLayers[activeBackgroundLayerIndex];
 
     nextLayer.style.backgroundImage = `url("${variant.uri}")`;
-    nextLayer.classList.add('is-active');
+    nextLayer.classList.add("is-active");
 
     if (nextLayer !== previousLayer) {
-      previousLayer.classList.remove('is-active');
+      previousLayer.classList.remove("is-active");
       activeBackgroundLayerIndex = nextLayerIndex;
     }
   }
@@ -181,7 +194,7 @@
 
     const currentIndex = Math.max(
       0,
-      backgrounds.findIndex((background) => background.id === state.backgroundId)
+      backgrounds.findIndex((background) => background.id === state.backgroundId),
     );
     const nextIndex = (currentIndex + step + backgrounds.length) % backgrounds.length;
 
@@ -197,26 +210,81 @@
     sounds = Object.fromEntries(
       Object.entries(config.assets.sounds).map(([name, url]) => {
         const audio = new Audio(url);
-        audio.preload = 'auto';
-        audio.volume = name.startsWith('aprehensive') ? 1 : 0.45;
+        audio.preload = "auto";
+        audio.volume = soundVolumeFor(name);
         return [name, audio];
-      })
+      }),
     );
+    updateSoundControl();
   }
 
   function playSound(name, options = {}) {
     const sound = sounds[name];
     const now = Date.now();
 
-    if (!sound || now - (lastSoundAt[name] || 0) < soundCooldowns[name]) {
+    if (
+      !sound ||
+      state.soundMuted ||
+      !settings.soundEnabled ||
+      now - (lastSoundAt[name] || 0) < soundCooldowns[name]
+    ) {
       return;
     }
 
     lastSoundAt[name] = now;
     sound.pause();
     sound.currentTime = 0;
+    sound.volume = soundVolumeFor(name);
     sound.playbackRate = options.varyPitch ? 0.94 + Math.random() * 0.12 : 1;
     void sound.play().catch(() => undefined);
+  }
+
+  function soundVolumeFor(name) {
+    if (!settings.soundEnabled || state.soundMuted) {
+      return 0;
+    }
+
+    const multiplier = name.startsWith("aprehensive") ? 1.2 : 1;
+    return clamp(settings.soundVolume * multiplier, 0, 1);
+  }
+
+  function normalizeSettings(rawSettings = {}) {
+    const volume = Number(rawSettings.soundVolume);
+
+    return {
+      soundEnabled: rawSettings.soundEnabled !== false,
+      soundVolume: Number.isFinite(volume) ? clamp(volume, 0, 1) : defaultSettings.soundVolume,
+    };
+  }
+
+  function updateSoundControl() {
+    if (!soundToggle) {
+      return;
+    }
+
+    if (!settings.soundEnabled) {
+      soundToggle.classList.add("is-muted");
+      soundToggle.setAttribute("aria-pressed", "true");
+      soundToggle.setAttribute("aria-label", "Amber sounds are disabled in settings");
+      soundToggle.title = "Sounds disabled in settings";
+      return;
+    }
+
+    const isMuted = state.soundMuted;
+    soundToggle.classList.toggle("is-muted", isMuted);
+    soundToggle.setAttribute("aria-pressed", String(isMuted));
+    soundToggle.setAttribute("aria-label", isMuted ? "Unmute Amber sounds" : "Mute Amber sounds");
+    soundToggle.title = isMuted ? "Unmute sounds" : "Mute sounds";
+  }
+
+  function toggleSoundMuted() {
+    if (!settings.soundEnabled) {
+      return;
+    }
+
+    state.soundMuted = !state.soundMuted;
+    persist();
+    updateSoundControl();
   }
 
   function playRandomSound(names) {
@@ -224,7 +292,7 @@
   }
 
   function playNextApprehensiveSound() {
-    const names = ['aprehensive', 'aprehensive3'];
+    const names = ["aprehensive", "aprehensive3"];
     const now = Date.now();
 
     if (now - (lastSoundAt.aprehensiveGroup || 0) < soundCooldowns.aprehensive) {
@@ -260,8 +328,8 @@
     const next = frame(frameName);
     currentPivotY = next.pivot.y;
     sprite.src = frameUrl(next.file);
-    pet.style.setProperty('--pet-pivot-x', String(next.pivot.x));
-    pet.style.setProperty('--pet-pivot-y', String(next.pivot.y));
+    pet.style.setProperty("--pet-pivot-x", String(next.pivot.x));
+    pet.style.setProperty("--pet-pivot-y", String(next.pivot.y));
   }
 
   function setMotionClass(name) {
@@ -280,7 +348,7 @@
   }
 
   function setDirection(direction) {
-    pet.style.setProperty('--pet-direction', direction);
+    pet.style.setProperty("--pet-direction", direction);
   }
 
   function faceClientX(clientX) {
@@ -291,7 +359,7 @@
       return;
     }
 
-    setDirection(clientX > centerX ? '-1' : '1');
+    setDirection(clientX > centerX ? "-1" : "1");
   }
 
   function rememberPointer(event) {
@@ -307,17 +375,17 @@
   }
 
   function clearHoverBounce() {
-    pet.classList.remove('is-hovering');
+    pet.classList.remove("is-hovering");
   }
 
   function playIntroBounce() {
-    pet.classList.remove('is-intro');
+    pet.classList.remove("is-intro");
     void pet.offsetWidth;
-    pet.classList.add('is-intro');
+    pet.classList.add("is-intro");
   }
 
   function canPlayHoverBounce() {
-    return isHoverArmed && currentMode === 'ambient' && !drag;
+    return isHoverArmed && currentMode === "ambient" && !drag;
   }
 
   function playHoverBounce() {
@@ -329,7 +397,7 @@
     isHoverArmed = false;
     clearHoverBounce();
     void pet.offsetWidth;
-    pet.classList.add('is-hovering');
+    pet.classList.add("is-hovering");
   }
 
   function clearAnimationTimer() {
@@ -340,24 +408,28 @@
   function playAnimation(name, options = {}) {
     const next = animation(name);
 
-    if (!options.force && currentAnimation === name && currentMode === (options.mode || 'ambient')) {
+    if (
+      !options.force &&
+      currentAnimation === name &&
+      currentMode === (options.mode || "ambient")
+    ) {
       return;
     }
 
-    if (options.mode !== 'dragging' && !options.preserveDirection) {
+    if (options.mode !== "dragging" && !options.preserveDirection) {
       faceLastPointer();
     }
 
     clearAnimationTimer();
     currentAnimation = name;
-    currentMode = options.mode || 'ambient';
+    currentMode = options.mode || "ambient";
     currentFrameIndex = 0;
     setMotionClass(name);
     setSprite(next.frames[currentFrameIndex]);
-    scheduleNextFrame(next, options);
+    scheduleNextFrame(next);
   }
 
-  function scheduleNextFrame(activeAnimation, options) {
+  function scheduleNextFrame(activeAnimation) {
     const delay = Math.max(50, Math.round(1000 / activeAnimation.fps));
 
     animationTimer = window.setTimeout(() => {
@@ -367,14 +439,14 @@
         if (activeAnimation.loop) {
           currentFrameIndex = 0;
         } else {
-          currentMode = 'ambient';
+          currentMode = "ambient";
           chooseAmbientAnimation(true);
           return;
         }
       }
 
       setSprite(activeAnimation.frames[currentFrameIndex]);
-      scheduleNextFrame(activeAnimation, options);
+      scheduleNextFrame(activeAnimation);
     }, delay);
   }
 
@@ -384,39 +456,43 @@
   }
 
   function chooseAmbientAnimation(force = false) {
-    if (currentMode !== 'ambient') {
+    if (currentMode !== "ambient") {
       return;
     }
 
     const idleFor = Date.now() - state.lastUserActivityAt;
     const nextAnimation =
-      idleFor >= idleTimings.sleepAfterMs ? 'sleep' : idleFor >= idleTimings.boredAfterMs ? 'bored' : 'idle';
+      idleFor >= idleTimings.sleepAfterMs
+        ? "sleep"
+        : idleFor >= idleTimings.boredAfterMs
+          ? "bored"
+          : "idle";
 
-    playAnimation(nextAnimation, { force, mode: 'ambient' });
+    playAnimation(nextAnimation, { force, mode: "ambient" });
   }
 
   function playOneShot(name) {
-    if (currentMode === 'dragging') {
+    if (currentMode === "dragging") {
       return;
     }
 
-    playAnimation(name, { force: true, mode: 'oneshot' });
+    playAnimation(name, { force: true, mode: "oneshot" });
   }
 
   function handleActivity(activity) {
-    if (activity === 'spawn') {
+    if (activity === "spawn") {
       markUserActivity();
-      if (activity === 'spawn' && !state.hasPlayedIntro) {
+      if (activity === "spawn" && !state.hasPlayedIntro) {
         state.hasPlayedIntro = true;
         persist();
         playIntroBounce();
       }
 
-      playOneShot('wave');
+      playOneShot("wave");
       return;
     }
 
-    if (activity === 'typing') {
+    if (activity === "typing") {
       markUserActivity();
 
       if (Date.now() - lastTypingReactionAt < idleTimings.typingCooldownMs) {
@@ -425,8 +501,8 @@
       }
 
       lastTypingReactionAt = Date.now();
-      const reaction = state.nextTypingReaction === 'cheering' ? 'cheering' : 'wow';
-      state.nextTypingReaction = reaction === 'cheering' ? 'wow' : 'cheering';
+      const reaction = state.nextTypingReaction === "cheering" ? "cheering" : "wow";
+      state.nextTypingReaction = reaction === "cheering" ? "wow" : "cheering";
       persist();
       playOneShot(reaction);
     }
@@ -457,7 +533,9 @@
   }
 
   function roomFloorHeight(rect) {
-    const floorHeight = Number.parseFloat(getComputedStyle(stage).getPropertyValue('--room-floor-height'));
+    const floorHeight = Number.parseFloat(
+      getComputedStyle(stage).getPropertyValue("--room-floor-height"),
+    );
 
     return Number.isFinite(floorHeight) ? floorHeight : rect.height * 0.28;
   }
@@ -466,7 +544,7 @@
     const floorInset = clamp(
       roomFloorHeight(rect) * gravityFeel.floorInsetRatio,
       gravityFeel.minFloorInsetPx,
-      gravityFeel.maxFloorInsetPx
+      gravityFeel.maxFloorInsetPx,
     );
     const contactY = rect.height - floorInset;
     const centerY = contactY + petBounds.height / 2 - petBounds.height * currentPivotY;
@@ -477,7 +555,7 @@
   function pointerPoint(event) {
     return {
       x: event.clientX,
-      y: event.clientY
+      y: event.clientY,
     };
   }
 
@@ -485,6 +563,22 @@
     state.x = rect.width > 0 ? x / rect.width : state.x;
     state.y = rect.height > 0 ? y / rect.height : state.y;
     applyPosition();
+  }
+
+  function resetPosition() {
+    cancelGravity();
+    window.cancelAnimationFrame(dragRaf);
+    dragRaf = undefined;
+    drag = null;
+    pet.classList.remove("is-dragging");
+    currentMode = "ambient";
+    state.x = defaultState.x;
+    state.y = defaultState.y;
+    markUserActivity();
+    applyPosition();
+    scheduleGravity();
+    chooseAmbientAnimation(true);
+    postMessage({ type: "interaction", name: "resetPosition" });
   }
 
   function cancelGravity() {
@@ -532,9 +626,9 @@
 
       if (shouldPlayLandingReaction) {
         shouldPlayLandingReaction = false;
-        playAnimation('dropRecovery', { force: true, mode: 'oneshot', preserveDirection: true });
-        playRandomSound(['dropped1', 'dropped2']);
-        postMessage({ type: 'interaction', name: 'drag' });
+        playAnimation("dropRecovery", { force: true, mode: "oneshot", preserveDirection: true });
+        playRandomSound(["dropped1", "dropped2"]);
+        postMessage({ type: "interaction", name: "drag" });
       }
 
       return;
@@ -544,7 +638,7 @@
     gravityLastAt = timestamp;
     gravityVelocityY = Math.min(
       gravityFeel.maxVelocity,
-      gravityVelocityY + gravityFeel.acceleration * Math.max(16, deltaMs)
+      gravityVelocityY + gravityFeel.acceleration * Math.max(16, deltaMs),
     );
 
     const nextY = Math.min(targetY, currentY + gravityVelocityY * Math.max(16, deltaMs));
@@ -634,7 +728,7 @@
       targetX: state.x * stageRect().width,
       targetY: state.y * stageRect().height,
       wasBeyondApprehensiveDistance: false,
-      moved: false
+      moved: false,
     };
 
     markUserActivity();
@@ -655,7 +749,7 @@
     drag.pointerX = point.x;
     drag.pointerY = point.y;
     if (Math.abs(deltaX) > 0.5) {
-      setDirection(deltaX > 0 ? '-1' : '1');
+      setDirection(deltaX > 0 ? "-1" : "1");
     }
 
     rememberPointer(event);
@@ -663,9 +757,9 @@
 
     if (!drag.moved && movedDistance > 4) {
       drag.moved = true;
-      pet.classList.add('is-dragging');
-      playAnimation('dragged', { force: true, mode: 'dragging' });
-      playSound('startled');
+      pet.classList.add("is-dragging");
+      playAnimation("dragged", { force: true, mode: "dragging" });
+      playSound("startled");
     }
 
     if (drag.moved) {
@@ -704,15 +798,15 @@
       const droppedY = clamp(
         drag.targetY + dragFeel.dropOffsetPx,
         petBounds.height / 2,
-        rect.height - petBounds.height / 2
+        rect.height - petBounds.height / 2,
       );
       setPositionFromPixels(drag.targetX, droppedY, rect);
       persist();
     }
 
     drag = null;
-    pet.classList.remove('is-dragging');
-    currentMode = 'ambient';
+    pet.classList.remove("is-dragging");
+    currentMode = "ambient";
     markUserActivity();
 
     if (moved) {
@@ -720,19 +814,20 @@
       return;
     }
 
-    playOneShot('headpat');
-    playSound('happy', { varyPitch: true });
-    postMessage({ type: 'interaction', name: 'headpat' });
+    playOneShot("headpat");
+    playSound("happy", { varyPitch: true });
+    postMessage({ type: "interaction", name: "headpat" });
   }
 
   function initialize(configMessage) {
     config = configMessage;
     manifest = configMessage.manifest;
+    settings = normalizeSettings(configMessage.settings);
     setupBackground();
     setupSounds();
     document.documentElement.dataset.amberPetVersion = config.extensionVersion;
-    setDirection('1');
-    setSprite(animation('idle').frames[0]);
+    setDirection("1");
+    setSprite(animation("idle").frames[0]);
 
     applyPosition();
     scheduleGravity();
@@ -741,42 +836,52 @@
     ambientTimer = window.setInterval(() => chooseAmbientAnimation(), 1_000);
   }
 
-  pet.addEventListener('pointerdown', startDrag);
-  pet.addEventListener('pointermove', moveDrag);
-  pet.addEventListener('pointerup', endDrag);
-  pet.addEventListener('pointercancel', endDrag);
-  pet.addEventListener('pointerenter', (event) => {
+  pet.addEventListener("pointerdown", startDrag);
+  pet.addEventListener("pointermove", moveDrag);
+  pet.addEventListener("pointerup", endDrag);
+  pet.addEventListener("pointercancel", endDrag);
+  pet.addEventListener("pointerenter", (event) => {
     rememberPointer(event);
     faceClientX(event.clientX);
     playHoverBounce();
   });
-  pet.addEventListener('pointerleave', () => {
+  pet.addEventListener("pointerleave", () => {
     isHoverArmed = true;
     clearHoverBounce();
   });
-  pet.addEventListener('animationend', (event) => {
-    if (event.animationName === 'amber-hover-bounce') {
+  pet.addEventListener("animationend", (event) => {
+    if (event.animationName === "amber-hover-bounce") {
       clearHoverBounce();
       return;
     }
 
-    if (event.animationName === 'amber-intro-bounce') {
-      pet.classList.remove('is-intro');
+    if (event.animationName === "amber-intro-bounce") {
+      pet.classList.remove("is-intro");
     }
   });
 
-  pet.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
+  pet.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       markUserActivity();
-      playOneShot('headpat');
-      playSound('happy', { varyPitch: true });
-      postMessage({ type: 'interaction', name: 'headpat' });
+      playOneShot("headpat");
+      playSound("happy", { varyPitch: true });
+      postMessage({ type: "interaction", name: "headpat" });
     }
   });
 
-  backgroundControls.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-background-step]');
+  backgroundControls.addEventListener("click", (event) => {
+    if (event.target.closest("[data-sound-toggle]")) {
+      toggleSoundMuted();
+      return;
+    }
+
+    if (event.target.closest("[data-reset-position]")) {
+      resetPosition();
+      return;
+    }
+
+    const button = event.target.closest("[data-background-step]");
 
     if (!button) {
       return;
@@ -785,30 +890,35 @@
     changeBackground(Number(button.dataset.backgroundStep));
   });
 
-  window.addEventListener('resize', () => {
+  window.addEventListener("resize", () => {
     updateBackgroundForViewport();
     applyPosition();
     scheduleGravity();
     persist();
   });
 
-  window.addEventListener('error', (event) => {
-    postMessage({ type: 'error', message: event.message });
+  window.addEventListener("error", (event) => {
+    postMessage({ type: "error", message: event.message });
   });
 
-  window.addEventListener('message', (event) => {
+  window.addEventListener("message", (event) => {
     const message = event.data;
 
-    if (message?.type === 'config') {
+    if (message?.type === "config") {
       initialize(message.config);
       return;
     }
 
-    if (message?.type === 'activity') {
+    if (message?.type === "activity") {
       handleActivity(message.activity);
+      return;
+    }
+
+    if (message?.type === "command" && message.command === "resetPosition") {
+      resetPosition();
     }
   });
 
   applyPosition();
-  postMessage({ type: 'ready' });
+  postMessage({ type: "ready" });
 })();

@@ -1,10 +1,10 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { PNG } from 'pngjs';
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { PNG } from "pngjs";
 
 const canvasSize = 288;
-const sourceDir = 'media/images';
-const outputDir = 'media/images/processed';
+const sourceDir = "media/images";
+const outputDir = "media/images/amber";
 const expectedRows = 5;
 const expectedColumns = 5;
 const minComponentPixels = 1_000;
@@ -13,108 +13,95 @@ const framePadding = 8;
 const defaultPivot = { x: 0.5, y: 1 };
 
 const sheetFiles = {
-  sheet1: join(sourceDir, 'sheet1-no-background.png'),
-  sheet2: join(sourceDir, 'sheet2-no-background.png')
+  sheet1: join(sourceDir, "sheet1-no-background.png"),
+  sheet2: join(sourceDir, "sheet2-no-background.png"),
 };
 
 const animationDefinitions = {
   idle: {
-    description: 'Calm standing idle loop.',
+    description: "Calm standing idle loop.",
     loop: true,
     fps: 2,
     frames: [
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 2),
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 3),
-      frame('sheet1', 0, 3)
-    ]
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 2),
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 3),
+      frame("sheet1", 0, 3),
+    ],
   },
   bored: {
-    description: 'Bored loop before Amber falls asleep.',
+    description: "Bored loop before Amber falls asleep.",
     loop: true,
     fps: 1,
     frames: [
-      frame('sheet1', 3, 0),
-      frame('sheet1', 3, 0),
-      frame('sheet1', 3, 2),
-      frame('sheet1', 3, 2),
-      frame('sheet1', 3, 3),
-      frame('sheet1', 3, 3),
-      frame('sheet1', 3, 3),
-      frame('sheet1', 3, 3),
-      frame('sheet1', 3, 4)
-    ]
+      frame("sheet1", 3, 0),
+      frame("sheet1", 3, 0),
+      frame("sheet1", 3, 2),
+      frame("sheet1", 3, 2),
+      frame("sheet1", 3, 3),
+      frame("sheet1", 3, 3),
+      frame("sheet1", 3, 3),
+      frame("sheet1", 3, 3),
+      frame("sheet1", 3, 4),
+    ],
   },
   sleep: {
-    description: 'Sleeping loop after the user has been idle for a while.',
+    description: "Sleeping loop after the user has been idle for a while.",
     loop: true,
     fps: 1,
-    frames: [
-      frame('sheet1', 4, 1)
-    ]
+    frames: [frame("sheet1", 4, 1)],
   },
   wave: {
-    description: 'Greeting animation when the panel opens or Amber spawns.',
+    description: "Greeting animation when the panel opens or Amber spawns.",
     loop: false,
     fps: 3,
     frames: [
-      frame('sheet2', 3, 1),
-      frame('sheet2', 3, 1),
-      frame('sheet2', 3, 3),
-      frame('sheet2', 3, 3),
-      frame('sheet2', 3, 1),
-      frame('sheet2', 3, 1),
-      frame('sheet2', 3, 3),
-      frame('sheet2', 3, 3)
-    ]
+      frame("sheet2", 3, 1),
+      frame("sheet2", 3, 1),
+      frame("sheet2", 3, 3),
+      frame("sheet2", 3, 3),
+      frame("sheet2", 3, 1),
+      frame("sheet2", 3, 1),
+      frame("sheet2", 3, 3),
+      frame("sheet2", 3, 3),
+    ],
   },
   cheering: {
-    description: 'Typing reaction with an excited wave.',
+    description: "Typing reaction with an excited wave.",
     loop: false,
     fps: 8,
-    frames: range('sheet2', 2, 0, 5)
+    frames: range("sheet2", 2, 0, 5),
   },
   wow: {
-    description: 'Typing reaction with a surprised expression.',
+    description: "Typing reaction with a surprised expression.",
     loop: false,
     fps: 6,
-    frames: range('sheet2', 2, 0, 5)
+    frames: range("sheet2", 2, 0, 5),
   },
   headpat: {
-    description: 'Headpat animation when Amber is clicked.',
+    description: "Headpat animation when Amber is clicked.",
     loop: false,
     fps: 4,
-    frames: [
-      frame('sheet2', 0, 0),
-      frame('sheet2', 0, 1),
-      frame('sheet2', 0, 2)
-    ]
+    frames: [frame("sheet2", 0, 0), frame("sheet2", 0, 1), frame("sheet2", 0, 2)],
   },
   dragged: {
-    description: 'Animation shown while Amber is being dragged.',
+    description: "Animation shown while Amber is being dragged.",
     loop: true,
     fps: 3,
-    frames: [
-      frame('sheet2', 1, 0),
-      frame('sheet2', 1, 1),
-      frame('sheet2', 1, 2)
-    ]
+    frames: [frame("sheet2", 1, 0), frame("sheet2", 1, 1), frame("sheet2", 1, 2)],
   },
   dropRecovery: {
-    description: 'Recovery animation after Amber is dropped.',
+    description: "Recovery animation after Amber is dropped.",
     loop: false,
     fps: 3,
-    frames: [
-      frame('sheet1', 4, 4),
-      frame('sheet1', 3, 3)
-    ]
-  }
+    frames: [frame("sheet1", 4, 4), frame("sheet1", 3, 3)],
+  },
 };
 
 const sheets = new Map();
@@ -153,7 +140,7 @@ for (const sheetName of Object.keys(sheetFiles)) {
         row: row + 1,
         column: column + 1,
         source: extractedFrame.source,
-        pivot: existingManifest?.frames?.[outputName]?.pivot ?? extractedFrame.pivot
+        pivot: existingManifest?.frames?.[outputName]?.pivot ?? extractedFrame.pivot,
       };
       generatedFrames += 1;
     }
@@ -165,7 +152,7 @@ const manifest = {
   frame: {
     width: canvasSize,
     height: canvasSize,
-    defaultPivot
+    defaultPivot,
   },
   frames: frameManifestEntries,
   animations: Object.fromEntries(
@@ -175,20 +162,20 @@ const manifest = {
         description: definition.description,
         loop: definition.loop,
         fps: definition.fps,
-        frames: definition.frames.map((sourceFrame) => frameIds.get(frameId(sourceFrame)))
-      }
-    ])
-  )
+        frames: definition.frames.map((sourceFrame) => frameIds.get(frameId(sourceFrame))),
+      },
+    ]),
+  ),
 };
 
-await writeFile(join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+await writeFile(join(outputDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`Generated ${generatedFrames} transparent Amber Pet frames in ${outputDir}`);
 
 async function readExistingManifest() {
   try {
-    return JSON.parse(await readFile(join(outputDir, 'manifest.json'), 'utf8'));
+    return JSON.parse(await readFile(join(outputDir, "manifest.json"), "utf8"));
   } catch (error) {
-    if (error?.code === 'ENOENT') {
+    if (error?.code === "ENOENT") {
       return undefined;
     }
 
@@ -204,13 +191,17 @@ function detectFrameBounds(sheetName, png) {
   const expectedFrames = expectedRows * expectedColumns;
 
   if (components.length !== expectedFrames) {
-    throw new Error(`${sheetName} has ${components.length} sprite components; expected ${expectedFrames}`);
+    throw new Error(
+      `${sheetName} has ${components.length} sprite components; expected ${expectedFrames}`,
+    );
   }
 
   const rows = [];
 
   for (let index = 0; index < components.length; index += expectedColumns) {
-    rows.push(components.slice(index, index + expectedColumns).sort((a, b) => a.centerX - b.centerX));
+    rows.push(
+      components.slice(index, index + expectedColumns).sort((a, b) => a.centerX - b.centerX),
+    );
   }
 
   return rows;
@@ -256,7 +247,7 @@ function floodFillComponent(png, visited, startIndex) {
       [x - 1, y],
       [x + 1, y],
       [x, y - 1],
-      [x, y + 1]
+      [x, y + 1],
     ]) {
       if (nextX < 0 || nextX >= png.width || nextY < 0 || nextY >= png.height) {
         continue;
@@ -282,7 +273,7 @@ function floodFillComponent(png, visited, startIndex) {
     height: maxY - minY + 1,
     centerX: minX + (maxX - minX + 1) / 2,
     centerY: minY + (maxY - minY + 1) / 2,
-    count
+    count,
   };
 }
 
@@ -308,7 +299,9 @@ function extractFrame(sourceFrame) {
   const sourceHeight = sourceMaxY - sourceY + 1;
 
   if (sourceWidth > canvasSize || sourceHeight > canvasSize) {
-    throw new Error(`${frameId(sourceFrame)} is ${sourceWidth}x${sourceHeight}; increase canvasSize`);
+    throw new Error(
+      `${frameId(sourceFrame)} is ${sourceWidth}x${sourceHeight}; increase canvasSize`,
+    );
   }
 
   const output = transparentPng(canvasSize, canvasSize);
@@ -321,12 +314,12 @@ function extractFrame(sourceFrame) {
       x: sourceX,
       y: sourceY,
       width: sourceWidth,
-      height: sourceHeight
+      height: sourceHeight,
     },
     pivot: {
       x: round((targetX + sourceWidth * defaultPivot.x) / canvasSize),
-      y: round((targetY + sourceHeight * defaultPivot.y) / canvasSize)
-    }
+      y: round((targetY + sourceHeight * defaultPivot.y) / canvasSize),
+    },
   };
 }
 
@@ -355,7 +348,7 @@ function transparentPng(width, height) {
     width,
     height,
     colorType: 6,
-    inputColorType: 6
+    inputColorType: 6,
   });
 }
 

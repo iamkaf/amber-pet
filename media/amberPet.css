@@ -150,6 +150,10 @@ body {
   background: color-mix(in srgb, #17151a 60%, var(--vscode-button-background) 40%);
 }
 
+.background-control.is-muted {
+  color: color-mix(in srgb, #ffffff 50%, transparent);
+}
+
 .background-control:focus-visible {
   outline: 1px solid var(--pet-focus);
   outline-offset: 2px;

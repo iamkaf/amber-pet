@@ -1,23 +1,29 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-const commandId = 'amberPet.spawn';
-const panelViewType = 'amberPet.panel';
-const sidebarViewType = 'amberPet.view';
-const installPromptStateKey = 'amberPet.hasShownInstallPrompt';
-const spawnAmberAction = 'Spawn Amber';
+const commandId = "amberPet.spawn";
+const resetPositionCommandId = "amberPet.resetPosition";
+const panelViewType = "amberPet.panel";
+const sidebarViewType = "amberPet.view";
+const installPromptStateKey = "amberPet.hasShownInstallPrompt";
+const spawnAmberAction = "Spawn Amber";
 
 type WebviewMessage =
-  | { type: 'ready' }
-  | { type: 'interaction'; name: string }
-  | { type: 'error'; message: string };
+  | { type: "ready" }
+  | { type: "interaction"; name: string }
+  | { type: "error"; message: string };
 
 type WebviewActivityMessage = {
-  type: 'activity';
-  activity: 'spawn' | 'typing';
+  type: "activity";
+  activity: "spawn" | "typing";
+};
+
+type WebviewCommandMessage = {
+  type: "command";
+  command: "resetPosition";
 };
 
 type WebviewConfigMessage = {
-  type: 'config';
+  type: "config";
   config: {
     extensionVersion: string;
     assets: {
@@ -44,6 +50,10 @@ type WebviewConfigMessage = {
         startled: string;
       };
     };
+    settings: {
+      soundEnabled: boolean;
+      soundVolume: number;
+    };
     manifest: unknown;
   };
 };
@@ -57,18 +67,24 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(commandId, () => controller.spawnOrReveal()),
+    vscode.commands.registerCommand(resetPositionCommandId, () => controller.resetPosition()),
     controller,
     vscode.window.registerWebviewViewProvider(sidebarViewType, controller, {
       webviewOptions: {
-        retainContextWhenHidden: true
-      }
+        retainContextWhenHidden: true,
+      },
     }),
     vscode.workspace.onDidChangeTextDocument((event) => controller.handleTextDocumentChange(event)),
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration("amberPet.sound")) {
+        void controller.refreshConfig();
+      }
+    }),
     vscode.window.registerWebviewPanelSerializer(panelViewType, {
       async deserializeWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
         controller.restore(panel);
-      }
-    })
+      },
+    }),
   );
 
   void showInstallPrompt(context);
@@ -86,8 +102,8 @@ async function showInstallPrompt(context: vscode.ExtensionContext): Promise<void
   await context.globalState.update(installPromptStateKey, true);
 
   const selection = await vscode.window.showInformationMessage(
-    'Amber Pet is installed. Spawn Amber in the Explorer?',
-    spawnAmberAction
+    "Amber Pet is installed. Spawn Amber in the Explorer?",
+    spawnAmberAction,
   );
 
   if (selection === spawnAmberAction) {
@@ -100,11 +116,12 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
   private view: vscode.WebviewView | undefined;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly statusBarItem: vscode.StatusBarItem;
+  private pendingCommand: WebviewCommandMessage["command"] | undefined;
 
   constructor(private readonly context: vscode.ExtensionContext) {
     this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    this.statusBarItem.text = '$(sparkle) Amber Pet';
-    this.statusBarItem.tooltip = 'Spawn or reveal Amber Pet in the Explorer';
+    this.statusBarItem.text = "$(sparkle) Amber Pet";
+    this.statusBarItem.tooltip = "Spawn or reveal Amber Pet in the Explorer";
     this.statusBarItem.command = commandId;
     this.statusBarItem.show();
     this.disposables.push(this.statusBarItem);
@@ -112,6 +129,11 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
 
   spawnOrReveal(): void {
     void this.revealSidebarView();
+  }
+
+  resetPosition(): void {
+    this.pendingCommand = "resetPosition";
+    void this.revealSidebarView({ notifySpawn: false }).then(() => this.flushPendingCommand());
   }
 
   restore(panel: vscode.WebviewPanel): void {
@@ -136,24 +158,26 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
         }
       },
       undefined,
-      viewDisposables
+      viewDisposables,
     );
 
     view.webview.onDidReceiveMessage(
       (message: WebviewMessage) => this.handleWebviewMessage(view, message),
       undefined,
-      viewDisposables
+      viewDisposables,
     );
   }
 
-  private async revealSidebarView(): Promise<void> {
+  private async revealSidebarView(options = { notifySpawn: true }): Promise<void> {
     try {
-      await vscode.commands.executeCommand('workbench.view.explorer');
+      await vscode.commands.executeCommand("workbench.view.explorer");
       await vscode.commands.executeCommand(`${sidebarViewType}.focus`);
-      this.postActivity('spawn');
+      if (options.notifySpawn) {
+        this.postActivity("spawn");
+      }
     } catch (error) {
       console.error(`[Amber Pet] failed to focus sidebar view: ${String(error)}`);
-      void vscode.window.showErrorMessage('Amber Pet could not reveal the Explorer view.');
+      void vscode.window.showErrorMessage("Amber Pet could not reveal the Explorer view.");
     }
   }
 
@@ -184,25 +208,25 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
         }
       },
       undefined,
-      panelDisposables
+      panelDisposables,
     );
 
     panel.webview.onDidReceiveMessage(
       (message: WebviewMessage) => this.handleWebviewMessage(panel, message),
       undefined,
-      panelDisposables
+      panelDisposables,
     );
   }
 
   private handleWebviewMessage(host: AmberWebviewHost, message: WebviewMessage): void {
     switch (message.type) {
-      case 'ready':
+      case "ready":
         void this.sendInitialState(host);
         return;
-      case 'interaction':
+      case "interaction":
         console.debug(`[Amber Pet] interaction: ${message.name}`);
         return;
-      case 'error':
+      case "error":
         console.error(`[Amber Pet] webview error: ${message.message}`);
         return;
     }
@@ -213,35 +237,68 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
       return;
     }
 
-    this.postActivity('typing');
+    this.postActivity("typing");
+  }
+
+  async refreshConfig(): Promise<void> {
+    await Promise.all(
+      [this.view, this.panel].flatMap((host) => (host ? [this.sendConfig(host)] : [])),
+    );
   }
 
   private async sendInitialState(host: AmberWebviewHost): Promise<void> {
     try {
-      await host.webview.postMessage(await this.getConfigMessage(host.webview));
-      await host.webview.postMessage({ type: 'activity', activity: 'spawn' } satisfies WebviewActivityMessage);
+      await this.sendConfig(host);
+      await host.webview.postMessage({
+        type: "activity",
+        activity: "spawn",
+      } satisfies WebviewActivityMessage);
+      this.flushPendingCommand();
     } catch (error) {
       console.error(`[Amber Pet] failed to initialize webview: ${String(error)}`);
     }
   }
 
-  private postActivity(activity: WebviewActivityMessage['activity']): void {
-    const message = { type: 'activity', activity } satisfies WebviewActivityMessage;
+  private async sendConfig(host: AmberWebviewHost): Promise<void> {
+    await host.webview.postMessage(await this.getConfigMessage(host.webview));
+  }
+
+  private postActivity(activity: WebviewActivityMessage["activity"]): void {
+    const message = { type: "activity", activity } satisfies WebviewActivityMessage;
     void this.view?.webview.postMessage(message);
     void this.panel?.webview.postMessage(message);
+  }
+
+  private postCommand(command: WebviewCommandMessage["command"]): void {
+    const message = { type: "command", command } satisfies WebviewCommandMessage;
+    void this.view?.webview.postMessage(message);
+    void this.panel?.webview.postMessage(message);
+  }
+
+  private flushPendingCommand(): void {
+    if (!this.pendingCommand || (!this.view && !this.panel)) {
+      return;
+    }
+
+    this.postCommand(this.pendingCommand);
+    this.pendingCommand = undefined;
   }
 
   private getWebviewOptions(): vscode.WebviewOptions {
     return {
       enableScripts: true,
-      localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')]
+      localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, "media")],
     };
   }
 
   private getHtml(webview: vscode.Webview): string {
     const nonce = getNonce();
-    const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'amberPet.css'));
-    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'amberPet.js'));
+    const stylesUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "media", "amberPet.css"),
+    );
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "media", "amberPet.js"),
+    );
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -259,6 +316,8 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
     <div class="background-controls" hidden>
       <button class="background-control" type="button" data-background-step="-1" aria-label="Previous background">&lsaquo;</button>
       <button class="background-control" type="button" data-background-step="1" aria-label="Next background">&rsaquo;</button>
+      <button class="background-control" type="button" data-sound-toggle aria-label="Mute Amber sounds" aria-pressed="false">S</button>
+      <button class="background-control" type="button" data-reset-position aria-label="Reset Amber position">R</button>
     </div>
     <div class="pet-shadow" aria-hidden="true"></div>
     <button class="pet" type="button" aria-label="Pet Amber">
@@ -277,28 +336,36 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
   }
 
   private async getConfigMessage(webview: vscode.Webview): Promise<WebviewConfigMessage> {
-    const imageBaseUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'images'));
-    const frameBaseUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'images', 'processed')
+    const imageBaseUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "media", "images"),
     );
-    const backgroundBaseUri = vscode.Uri.joinPath(this.context.extensionUri, 'media', 'images', 'backgrounds');
-    const audioBaseUri = vscode.Uri.joinPath(this.context.extensionUri, 'media', 'audio');
+    const frameBaseUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "media", "images", "amber"),
+    );
+    const backgroundBaseUri = vscode.Uri.joinPath(
+      this.context.extensionUri,
+      "media",
+      "images",
+      "backgrounds",
+    );
+    const audioBaseUri = vscode.Uri.joinPath(this.context.extensionUri, "media", "audio");
     const manifestUri = vscode.Uri.joinPath(
       this.context.extensionUri,
-      'media',
-      'images',
-      'processed',
-      'manifest.json'
+      "media",
+      "images",
+      "amber",
+      "manifest.json",
     );
     const manifestBytes = await vscode.workspace.fs.readFile(manifestUri);
+    const settings = this.getSettings();
 
     return {
-      type: 'config',
+      type: "config",
       config: {
         extensionVersion: String(this.context.extension.packageJSON.version),
         assets: {
           backgrounds: Array.from({ length: 10 }, (_, index) => {
-            const roomNumber = String(index + 1).padStart(2, '0');
+            const roomNumber = String(index + 1).padStart(2, "0");
             const wideName = `cozy-room-${roomNumber}.png`;
             const narrowName = `cozy-room-${roomNumber}-narrow.png`;
 
@@ -306,35 +373,66 @@ class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposabl
               id: `cozy-room-${roomNumber}`,
               wide: {
                 name: wideName,
-                uri: webview.asWebviewUri(vscode.Uri.joinPath(backgroundBaseUri, wideName)).toString()
+                uri: webview
+                  .asWebviewUri(vscode.Uri.joinPath(backgroundBaseUri, wideName))
+                  .toString(),
               },
               narrow: {
                 name: narrowName,
-                uri: webview.asWebviewUri(vscode.Uri.joinPath(backgroundBaseUri, narrowName)).toString()
-              }
+                uri: webview
+                  .asWebviewUri(vscode.Uri.joinPath(backgroundBaseUri, narrowName))
+                  .toString(),
+              },
             };
           }),
           images: imageBaseUri.toString(),
           frameBaseUri: frameBaseUri.toString(),
           sounds: {
-            aprehensive: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'aprehensive.mp3')).toString(),
-            aprehensive3: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'aprehensive3.mp3')).toString(),
-            curious: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'curious.mp3')).toString(),
-            dropped1: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'dropped1.mp3')).toString(),
-            dropped2: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'dropped2.mp3')).toString(),
-            happy: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'happy.mp3')).toString(),
-            startled: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, 'startled.mp3')).toString()
-          }
+            aprehensive: webview
+              .asWebviewUri(vscode.Uri.joinPath(audioBaseUri, "aprehensive.mp3"))
+              .toString(),
+            aprehensive3: webview
+              .asWebviewUri(vscode.Uri.joinPath(audioBaseUri, "aprehensive3.mp3"))
+              .toString(),
+            curious: webview
+              .asWebviewUri(vscode.Uri.joinPath(audioBaseUri, "curious.mp3"))
+              .toString(),
+            dropped1: webview
+              .asWebviewUri(vscode.Uri.joinPath(audioBaseUri, "dropped1.mp3"))
+              .toString(),
+            dropped2: webview
+              .asWebviewUri(vscode.Uri.joinPath(audioBaseUri, "dropped2.mp3"))
+              .toString(),
+            happy: webview.asWebviewUri(vscode.Uri.joinPath(audioBaseUri, "happy.mp3")).toString(),
+            startled: webview
+              .asWebviewUri(vscode.Uri.joinPath(audioBaseUri, "startled.mp3"))
+              .toString(),
+          },
         },
-        manifest: JSON.parse(Buffer.from(manifestBytes).toString('utf8')) as unknown
-      }
+        settings,
+        manifest: JSON.parse(Buffer.from(manifestBytes).toString("utf8")) as unknown,
+      },
+    };
+  }
+
+  private getSettings(): WebviewConfigMessage["config"]["settings"] {
+    const configuration = vscode.workspace.getConfiguration("amberPet");
+    const soundVolume = configuration.get<number>("sound.volume", 45);
+
+    return {
+      soundEnabled: configuration.get<boolean>("sound.enabled", true),
+      soundVolume: clamp(soundVolume, 0, 100) / 100,
     };
   }
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
 function getNonce(): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let nonce = '';
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let nonce = "";
 
   for (let index = 0; index < 32; index += 1) {
     nonce += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
