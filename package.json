@@ -22,7 +22,7 @@
     "type": "git",
     "url": "https://github.com/iamkaf/amber-pet.git"
   },
-  "publisher": "amber-pet",
+  "publisher": "iamkaf",
   "main": "./dist/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run package",
