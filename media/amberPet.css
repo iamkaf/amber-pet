@@ -1,10 +1,15 @@
 :root {
   color-scheme: light dark;
-  --stage-bg: color-mix(in srgb, var(--vscode-editor-background) 82%, #f09a3e 18%);
-  --stage-grid: color-mix(in srgb, var(--vscode-editor-foreground) 13%, transparent);
-  --stage-line: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+  --room-wall-top: color-mix(in srgb, var(--vscode-editor-background) 72%, #5c4d62 28%);
+  --room-wall-bottom: color-mix(in srgb, var(--vscode-editor-background) 68%, #78604e 32%);
+  --room-floor: color-mix(in srgb, var(--vscode-editor-background) 58%, #6f5137 42%);
+  --room-floor-dark: color-mix(in srgb, var(--vscode-editor-background) 72%, #3f302a 28%);
+  --room-baseboard: color-mix(in srgb, var(--vscode-editor-foreground) 14%, #b27b55 86%);
+  --room-background-image: none;
+  --room-background-size: auto 360px;
+  --room-floor-height: clamp(74px, 28vh, 190px);
   --pet-focus: var(--vscode-focusBorder);
-  --pet-size: clamp(184px, 38vmin, 288px);
+  --pet-size: 154px;
   --pet-pivot-x: .5;
   --pet-pivot-y: 1;
   --pet-direction: 1;
@@ -28,49 +33,149 @@ body {
   position: relative;
   width: 100vw;
   height: 100vh;
-  min-width: 280px;
-  min-height: 220px;
+  min-width: 0;
+  min-height: 180px;
   overflow: hidden;
   background:
-    linear-gradient(125deg, transparent 0 39%, color-mix(in srgb, #d9792b 15%, transparent) 39% 41%, transparent 41%),
-    radial-gradient(circle at 73% 18%, color-mix(in srgb, #ffd166 18%, transparent), transparent 28%),
-    linear-gradient(var(--stage-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px),
-    var(--stage-bg);
-  background-size: auto, auto, 36px 36px, 36px 36px, auto;
+    linear-gradient(to bottom, color-mix(in srgb, #000000 3%, transparent), color-mix(in srgb, #000000 16%, transparent)),
+    radial-gradient(ellipse at 74% 16%, color-mix(in srgb, #ffd08a 12%, transparent), transparent 36%),
+    linear-gradient(180deg, var(--room-wall-top), var(--room-wall-bottom));
+  background-position:
+    center,
+    center,
+    center;
+  background-repeat: no-repeat;
+  background-size:
+    cover,
+    cover,
+    cover;
   cursor: default;
 }
 
-.pet-stage::after {
+.room-background-layer {
+  position: absolute;
+  inset: 20px 0 -20px;
+  z-index: 0;
+  background-image: var(--room-background-image);
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: var(--room-background-size);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 340ms ease;
+}
+
+.room-background-layer.is-active {
+  opacity: 1;
+}
+
+.pet-stage::before {
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
-  height: 27%;
-  background: linear-gradient(to top, color-mix(in srgb, #000000 9%, transparent), transparent);
+  height: var(--room-floor-height);
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, #ffffff 7%, transparent), transparent 22%),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, #ffffff 4%, transparent) 0 1px,
+      transparent 1px 54px
+    ),
+    linear-gradient(150deg, var(--room-floor), var(--room-floor-dark));
+  border-top: 2px solid var(--room-baseboard);
+  box-shadow:
+    inset 0 10px 22px color-mix(in srgb, #ffffff 5%, transparent),
+    0 -3px 12px color-mix(in srgb, #000000 18%, transparent);
+  clip-path: polygon(0 8px, 100% 0, 100% 100%, 0 100%);
   content: "";
   pointer-events: none;
+  transform: skewY(-1deg);
+  transform-origin: bottom left;
+  z-index: 0;
+}
+
+.pet-stage.has-room-background::before {
+  opacity: 0;
+}
+
+.pet-stage::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% calc(100% - var(--room-floor-height) * .55), color-mix(in srgb, #000000 13%, transparent), transparent 26%),
+    linear-gradient(to bottom, transparent 60%, color-mix(in srgb, #000000 14%, transparent));
+  content: "";
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.background-controls {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  z-index: 4;
+  box-sizing: border-box;
+  display: flex;
+  gap: 4px;
+  max-width: calc(100% - 14px);
+  opacity: .48;
+  transition: opacity 160ms ease;
+}
+
+.background-controls:hover,
+.background-controls:focus-within {
+  opacity: .9;
+}
+
+.background-control {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, #ffffff 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #17151a 72%, transparent);
+  box-shadow: 0 1px 5px color-mix(in srgb, #000000 34%, transparent);
+  color: color-mix(in srgb, #ffffff 92%, transparent);
+  cursor: pointer;
+  font: 700 16px/1 var(--vscode-font-family);
+  place-items: center;
+}
+
+.background-control:hover {
+  background: color-mix(in srgb, #17151a 60%, var(--vscode-button-background) 40%);
+}
+
+.background-control:focus-visible {
+  outline: 1px solid var(--pet-focus);
+  outline-offset: 2px;
 }
 
 .pet {
   position: absolute;
   left: 50%;
   top: 52%;
-  z-index: 1;
+  z-index: 3;
   width: var(--pet-size);
   height: var(--pet-size);
   padding: 0;
   border: 0;
   background: transparent;
   cursor: grab;
+  outline: none;
   transform: translate(-50%, -50%);
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
+.pet:focus,
 .pet:focus-visible {
-  outline: 2px solid var(--pet-focus);
-  outline-offset: 4px;
-  border-radius: 8px;
+  outline: none;
 }
 
 .pet.is-dragging {
@@ -92,6 +197,12 @@ body {
   transform-origin: calc(var(--pet-pivot-x) * 100%) calc(var(--pet-pivot-y) * 100%);
 }
 
+.pet.is-idle .pet-motion-layer,
+.pet.is-bored .pet-motion-layer,
+.pet.is-sleep .pet-motion-layer {
+  transform-origin: calc(var(--pet-pivot-x) * 100%) 100%;
+}
+
 .pet.is-hovering .pet-hover-layer {
   animation: amber-hover-bounce 320ms ease-out;
 }
@@ -106,6 +217,7 @@ body {
   filter: drop-shadow(0 16px 18px color-mix(in srgb, #000000 24%, transparent));
   pointer-events: none;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .pet.is-idle .pet-motion-layer,
@@ -142,6 +254,7 @@ body {
   position: absolute;
   left: 50%;
   top: calc(52% + var(--pet-size) * .38);
+  z-index: 2;
   width: calc(var(--pet-size) * .56);
   height: calc(var(--pet-size) * .08);
   border-radius: 999px;

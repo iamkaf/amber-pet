@@ -4,10 +4,14 @@
   const sprite = document.querySelector('.pet-sprite');
   const shadow = document.querySelector('.pet-shadow');
   const stage = document.querySelector('.pet-stage');
+  const backgroundLayers = Array.from(document.querySelectorAll('.room-background-layer'));
+  const backgroundControls = document.querySelector('.background-controls');
   const savedState = vscode.getState() || {};
   const defaultState = {
     x: 0.5,
     y: 0.52,
+    backgroundId: undefined,
+    backgroundName: undefined,
     lastUserActivityAt: Date.now(),
     nextTypingReaction: 'cheering',
     hasPlayedIntro: false
@@ -21,9 +25,10 @@
     sleepAfterMs: 135_000,
     typingCooldownMs: 3_000
   };
+  const backgroundVariantBreakpointPx = 520;
   const soundCooldowns = {
-    aprehensive: 600,
-    aprehensive3: 600,
+    aprehensive: 1000,
+    aprehensive3: 1000,
     curious: 700,
     dropped1: 700,
     dropped2: 700,
@@ -37,6 +42,14 @@
     headAnchorX: 0.5,
     headAnchorY: 0.28,
     positionLerp: 0.24
+  };
+  const gravityFeel = {
+    acceleration: 0.0018,
+    floorInsetRatio: 0.46,
+    maxFloorInsetPx: 92,
+    maxVelocity: 1.1,
+    minFloorInsetPx: 34,
+    settleDistancePx: 0.8
   };
 
   let config = null;
@@ -54,7 +67,14 @@
   let motionClass = undefined;
   let isHoverArmed = true;
   let dragRaf = undefined;
+  let gravityRaf = undefined;
+  let gravityLastAt = undefined;
+  let gravityVelocityY = 0;
+  let shouldPlayLandingReaction = false;
   let lastPointerClientX = undefined;
+  let currentPivotY = 1;
+  let activeBackgroundLayerIndex = 0;
+  let currentBackground = null;
 
   function postMessage(message) {
     vscode.postMessage(message);
@@ -64,6 +84,8 @@
     vscode.setState({
       x: state.x,
       y: state.y,
+      backgroundId: state.backgroundId,
+      backgroundName: state.backgroundName,
       lastUserActivityAt: state.lastUserActivityAt,
       nextTypingReaction: state.nextTypingReaction,
       hasPlayedIntro: state.hasPlayedIntro
@@ -76,6 +98,99 @@
 
   function frameUrl(frameName) {
     return `${config.assets.frameBaseUri.replace(/\/$/, '')}/${frameName}`;
+  }
+
+  function setupBackground() {
+    const backgrounds = config.assets.backgrounds || [];
+
+    if (backgrounds.length === 0) {
+      stage.classList.remove('has-room-background');
+      backgroundLayers.forEach((layer) => {
+        layer.style.removeProperty('background-image');
+        layer.classList.remove('is-active');
+      });
+      backgroundControls.hidden = true;
+      return;
+    }
+
+    let selected =
+      backgrounds.find((background) => background.id === state.backgroundId) ||
+      backgrounds.find((background) => {
+        return background.wide.name === state.backgroundName || background.narrow.name === state.backgroundName;
+      });
+
+    if (!selected) {
+      selected = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+      state.backgroundId = selected.id;
+      persist();
+    }
+
+    setBackground(selected, { animate: false, force: true });
+    backgroundControls.hidden = backgrounds.length <= 1;
+  }
+
+  function preferredBackgroundVariant(background) {
+    return window.innerWidth < backgroundVariantBreakpointPx ? background.narrow : background.wide;
+  }
+
+  function setBackground(background, options = {}) {
+    currentBackground = background;
+    state.backgroundId = background.id;
+    stage.classList.add('has-room-background');
+    applyBackgroundVariant(options);
+    persist();
+  }
+
+  function applyBackgroundVariant(options = {}) {
+    if (!currentBackground) {
+      return;
+    }
+
+    const variant = preferredBackgroundVariant(currentBackground);
+
+    if (!options.force && state.backgroundName === variant.name) {
+      return;
+    }
+
+    state.backgroundName = variant.name;
+
+    if (backgroundLayers.length < 2) {
+      stage.style.setProperty('--room-background-image', `url("${variant.uri}")`);
+      return;
+    }
+
+    const nextLayerIndex = options.animate ? 1 - activeBackgroundLayerIndex : activeBackgroundLayerIndex;
+    const nextLayer = backgroundLayers[nextLayerIndex];
+    const previousLayer = backgroundLayers[activeBackgroundLayerIndex];
+
+    nextLayer.style.backgroundImage = `url("${variant.uri}")`;
+    nextLayer.classList.add('is-active');
+
+    if (nextLayer !== previousLayer) {
+      previousLayer.classList.remove('is-active');
+      activeBackgroundLayerIndex = nextLayerIndex;
+    }
+  }
+
+  function changeBackground(step) {
+    const backgrounds = config?.assets.backgrounds || [];
+
+    if (backgrounds.length <= 1) {
+      return;
+    }
+
+    const currentIndex = Math.max(
+      0,
+      backgrounds.findIndex((background) => background.id === state.backgroundId)
+    );
+    const nextIndex = (currentIndex + step + backgrounds.length) % backgrounds.length;
+
+    setBackground(backgrounds[nextIndex], { animate: true });
+  }
+
+  function updateBackgroundForViewport() {
+    applyBackgroundVariant({ animate: true });
+    persist();
   }
 
   function setupSounds() {
@@ -143,6 +258,7 @@
 
   function setSprite(frameName) {
     const next = frame(frameName);
+    currentPivotY = next.pivot.y;
     sprite.src = frameUrl(next.file);
     pet.style.setProperty('--pet-pivot-x', String(next.pivot.x));
     pet.style.setProperty('--pet-pivot-y', String(next.pivot.y));
@@ -340,6 +456,24 @@
     shadow.style.top = `${y + halfHeight * 0.58}px`;
   }
 
+  function roomFloorHeight(rect) {
+    const floorHeight = Number.parseFloat(getComputedStyle(stage).getPropertyValue('--room-floor-height'));
+
+    return Number.isFinite(floorHeight) ? floorHeight : rect.height * 0.28;
+  }
+
+  function floorCenterY(rect, petBounds) {
+    const floorInset = clamp(
+      roomFloorHeight(rect) * gravityFeel.floorInsetRatio,
+      gravityFeel.minFloorInsetPx,
+      gravityFeel.maxFloorInsetPx
+    );
+    const contactY = rect.height - floorInset;
+    const centerY = contactY + petBounds.height / 2 - petBounds.height * currentPivotY;
+
+    return clamp(centerY, petBounds.height / 2, rect.height - petBounds.height / 2);
+  }
+
   function pointerPoint(event) {
     return {
       x: event.clientX,
@@ -351,6 +485,72 @@
     state.x = rect.width > 0 ? x / rect.width : state.x;
     state.y = rect.height > 0 ? y / rect.height : state.y;
     applyPosition();
+  }
+
+  function cancelGravity() {
+    window.cancelAnimationFrame(gravityRaf);
+    gravityRaf = undefined;
+    gravityLastAt = undefined;
+    gravityVelocityY = 0;
+    shouldPlayLandingReaction = false;
+  }
+
+  function scheduleGravity(options = {}) {
+    if (drag) {
+      return;
+    }
+
+    shouldPlayLandingReaction = shouldPlayLandingReaction || Boolean(options.landingReaction);
+
+    if (gravityRaf !== undefined) {
+      return;
+    }
+
+    gravityLastAt = undefined;
+    gravityRaf = window.requestAnimationFrame(updateGravity);
+  }
+
+  function updateGravity(timestamp) {
+    gravityRaf = undefined;
+
+    if (drag) {
+      cancelGravity();
+      return;
+    }
+
+    const rect = stageRect();
+    const petBounds = petRect();
+    const currentX = state.x * rect.width;
+    const currentY = state.y * rect.height;
+    const targetY = floorCenterY(rect, petBounds);
+
+    if (currentY >= targetY - gravityFeel.settleDistancePx) {
+      setPositionFromPixels(currentX, targetY, rect);
+      persist();
+      gravityLastAt = undefined;
+      gravityVelocityY = 0;
+
+      if (shouldPlayLandingReaction) {
+        shouldPlayLandingReaction = false;
+        playAnimation('dropRecovery', { force: true, mode: 'oneshot', preserveDirection: true });
+        playRandomSound(['dropped1', 'dropped2']);
+        postMessage({ type: 'interaction', name: 'drag' });
+      }
+
+      return;
+    }
+
+    const deltaMs = Math.min(34, timestamp - (gravityLastAt || timestamp));
+    gravityLastAt = timestamp;
+    gravityVelocityY = Math.min(
+      gravityFeel.maxVelocity,
+      gravityVelocityY + gravityFeel.acceleration * Math.max(16, deltaMs)
+    );
+
+    const nextY = Math.min(targetY, currentY + gravityVelocityY * Math.max(16, deltaMs));
+    setPositionFromPixels(currentX, nextY, rect);
+    persist();
+    gravityRaf = window.requestAnimationFrame(updateGravity);
   }
 
   function updateDragPosition() {
@@ -414,6 +614,8 @@
   }
 
   function startDrag(event) {
+    event.preventDefault();
+    cancelGravity();
     clearHoverBounce();
     rememberPointer(event);
     faceClientX(event.clientX);
@@ -514,9 +716,7 @@
     markUserActivity();
 
     if (moved) {
-      playAnimation('dropRecovery', { force: true, mode: 'oneshot', preserveDirection: true });
-      playRandomSound(['dropped1', 'dropped2']);
-      postMessage({ type: 'interaction', name: 'drag' });
+      scheduleGravity({ landingReaction: true });
       return;
     }
 
@@ -528,11 +728,14 @@
   function initialize(configMessage) {
     config = configMessage;
     manifest = configMessage.manifest;
+    setupBackground();
     setupSounds();
     document.documentElement.dataset.amberPetVersion = config.extensionVersion;
+    setDirection('1');
     setSprite(animation('idle').frames[0]);
 
     applyPosition();
+    scheduleGravity();
     chooseAmbientAnimation(true);
     window.clearInterval(ambientTimer);
     ambientTimer = window.setInterval(() => chooseAmbientAnimation(), 1_000);
@@ -572,8 +775,20 @@
     }
   });
 
+  backgroundControls.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-background-step]');
+
+    if (!button) {
+      return;
+    }
+
+    changeBackground(Number(button.dataset.backgroundStep));
+  });
+
   window.addEventListener('resize', () => {
+    updateBackgroundForViewport();
     applyPosition();
+    scheduleGravity();
     persist();
   });
 

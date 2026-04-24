@@ -12,11 +12,22 @@
     "Other"
   ],
   "activationEvents": [
+    "onStartupFinished",
     "onCommand:amberPet.spawn",
+    "onView:amberPet.view",
     "onWebviewPanel:amberPet.panel"
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "amberPet.view",
+          "name": "Amber Pet"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "amberPet.spawn",

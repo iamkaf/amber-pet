@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
 
 const commandId = 'amberPet.spawn';
-const viewType = 'amberPet.panel';
+const panelViewType = 'amberPet.panel';
+const sidebarViewType = 'amberPet.view';
+const installPromptStateKey = 'amberPet.hasShownInstallPrompt';
+const spawnAmberAction = 'Spawn Amber';
 
 type WebviewMessage =
   | { type: 'ready' }
@@ -18,6 +21,17 @@ type WebviewConfigMessage = {
   config: {
     extensionVersion: string;
     assets: {
+      backgrounds: Array<{
+        id: string;
+        wide: {
+          name: string;
+          uri: string;
+        };
+        narrow: {
+          name: string;
+          uri: string;
+        };
+      }>;
       images: string;
       frameBaseUri: string;
       sounds: {
@@ -34,58 +48,113 @@ type WebviewConfigMessage = {
   };
 };
 
+type AmberWebviewHost = {
+  readonly webview: vscode.Webview;
+};
+
 export function activate(context: vscode.ExtensionContext): void {
   const controller = new AmberPetController(context);
 
   context.subscriptions.push(
     vscode.commands.registerCommand(commandId, () => controller.spawnOrReveal()),
     controller,
+    vscode.window.registerWebviewViewProvider(sidebarViewType, controller, {
+      webviewOptions: {
+        retainContextWhenHidden: true
+      }
+    }),
     vscode.workspace.onDidChangeTextDocument((event) => controller.handleTextDocumentChange(event)),
-    vscode.window.registerWebviewPanelSerializer(viewType, {
+    vscode.window.registerWebviewPanelSerializer(panelViewType, {
       async deserializeWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
         controller.restore(panel);
       }
     })
   );
+
+  void showInstallPrompt(context);
 }
 
 export function deactivate(): void {
   // VS Code disposes subscriptions registered on the extension context.
 }
 
-class AmberPetController implements vscode.Disposable {
+async function showInstallPrompt(context: vscode.ExtensionContext): Promise<void> {
+  if (context.globalState.get<boolean>(installPromptStateKey)) {
+    return;
+  }
+
+  await context.globalState.update(installPromptStateKey, true);
+
+  const selection = await vscode.window.showInformationMessage(
+    'Amber Pet is installed. Spawn Amber in the Explorer?',
+    spawnAmberAction
+  );
+
+  if (selection === spawnAmberAction) {
+    await vscode.commands.executeCommand(commandId);
+  }
+}
+
+class AmberPetController implements vscode.WebviewViewProvider, vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
+  private view: vscode.WebviewView | undefined;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly statusBarItem: vscode.StatusBarItem;
 
   constructor(private readonly context: vscode.ExtensionContext) {
     this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     this.statusBarItem.text = '$(sparkle) Amber Pet';
-    this.statusBarItem.tooltip = 'Spawn or reveal Amber Pet';
+    this.statusBarItem.tooltip = 'Spawn or reveal Amber Pet in the Explorer';
     this.statusBarItem.command = commandId;
     this.statusBarItem.show();
     this.disposables.push(this.statusBarItem);
   }
 
   spawnOrReveal(): void {
-    const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
-
-    if (this.panel) {
-      this.panel.reveal(column);
-      this.postActivity('spawn');
-      return;
-    }
-
-    const panel = vscode.window.createWebviewPanel(viewType, 'Amber Pet', column, {
-      enableScripts: true,
-      localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')]
-    });
-
-    this.attachPanel(panel);
+    void this.revealSidebarView();
   }
 
   restore(panel: vscode.WebviewPanel): void {
     this.attachPanel(panel);
+  }
+
+  resolveWebviewView(view: vscode.WebviewView): void {
+    this.view = view;
+    view.webview.options = this.getWebviewOptions();
+    view.webview.html = this.getHtml(view.webview);
+
+    const viewDisposables: vscode.Disposable[] = [];
+
+    view.onDidDispose(
+      () => {
+        if (this.view === view) {
+          this.view = undefined;
+        }
+
+        while (viewDisposables.length) {
+          viewDisposables.pop()?.dispose();
+        }
+      },
+      undefined,
+      viewDisposables
+    );
+
+    view.webview.onDidReceiveMessage(
+      (message: WebviewMessage) => this.handleWebviewMessage(view, message),
+      undefined,
+      viewDisposables
+    );
+  }
+
+  private async revealSidebarView(): Promise<void> {
+    try {
+      await vscode.commands.executeCommand('workbench.view.explorer');
+      await vscode.commands.executeCommand(`${sidebarViewType}.focus`);
+      this.postActivity('spawn');
+    } catch (error) {
+      console.error(`[Amber Pet] failed to focus sidebar view: ${String(error)}`);
+      void vscode.window.showErrorMessage('Amber Pet could not reveal the Explorer view.');
+    }
   }
 
   dispose(): void {
@@ -99,10 +168,7 @@ class AmberPetController implements vscode.Disposable {
 
   private attachPanel(panel: vscode.WebviewPanel): void {
     this.panel = panel;
-    panel.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')]
-    };
+    panel.webview.options = this.getWebviewOptions();
     panel.webview.html = this.getHtml(panel.webview);
 
     const panelDisposables: vscode.Disposable[] = [];
@@ -128,10 +194,10 @@ class AmberPetController implements vscode.Disposable {
     );
   }
 
-  private handleWebviewMessage(panel: vscode.WebviewPanel, message: WebviewMessage): void {
+  private handleWebviewMessage(host: AmberWebviewHost, message: WebviewMessage): void {
     switch (message.type) {
       case 'ready':
-        void this.sendInitialState(panel);
+        void this.sendInitialState(host);
         return;
       case 'interaction':
         console.debug(`[Amber Pet] interaction: ${message.name}`);
@@ -150,17 +216,26 @@ class AmberPetController implements vscode.Disposable {
     this.postActivity('typing');
   }
 
-  private async sendInitialState(panel: vscode.WebviewPanel): Promise<void> {
+  private async sendInitialState(host: AmberWebviewHost): Promise<void> {
     try {
-      await panel.webview.postMessage(await this.getConfigMessage(panel.webview));
-      await panel.webview.postMessage({ type: 'activity', activity: 'spawn' } satisfies WebviewActivityMessage);
+      await host.webview.postMessage(await this.getConfigMessage(host.webview));
+      await host.webview.postMessage({ type: 'activity', activity: 'spawn' } satisfies WebviewActivityMessage);
     } catch (error) {
       console.error(`[Amber Pet] failed to initialize webview: ${String(error)}`);
     }
   }
 
   private postActivity(activity: WebviewActivityMessage['activity']): void {
-    void this.panel?.webview.postMessage({ type: 'activity', activity } satisfies WebviewActivityMessage);
+    const message = { type: 'activity', activity } satisfies WebviewActivityMessage;
+    void this.view?.webview.postMessage(message);
+    void this.panel?.webview.postMessage(message);
+  }
+
+  private getWebviewOptions(): vscode.WebviewOptions {
+    return {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')]
+    };
   }
 
   private getHtml(webview: vscode.Webview): string {
@@ -179,6 +254,12 @@ class AmberPetController implements vscode.Disposable {
 </head>
 <body>
   <main class="pet-stage" aria-label="Amber Pet playground">
+    <div class="room-background-layer is-active" aria-hidden="true"></div>
+    <div class="room-background-layer" aria-hidden="true"></div>
+    <div class="background-controls" hidden>
+      <button class="background-control" type="button" data-background-step="-1" aria-label="Previous background">&lsaquo;</button>
+      <button class="background-control" type="button" data-background-step="1" aria-label="Next background">&rsaquo;</button>
+    </div>
     <div class="pet-shadow" aria-hidden="true"></div>
     <button class="pet" type="button" aria-label="Pet Amber">
       <span class="pet-hover-layer" aria-hidden="true">
@@ -200,6 +281,7 @@ class AmberPetController implements vscode.Disposable {
     const frameBaseUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, 'media', 'images', 'processed')
     );
+    const backgroundBaseUri = vscode.Uri.joinPath(this.context.extensionUri, 'media', 'images', 'backgrounds');
     const audioBaseUri = vscode.Uri.joinPath(this.context.extensionUri, 'media', 'audio');
     const manifestUri = vscode.Uri.joinPath(
       this.context.extensionUri,
@@ -215,6 +297,23 @@ class AmberPetController implements vscode.Disposable {
       config: {
         extensionVersion: String(this.context.extension.packageJSON.version),
         assets: {
+          backgrounds: Array.from({ length: 10 }, (_, index) => {
+            const roomNumber = String(index + 1).padStart(2, '0');
+            const wideName = `cozy-room-${roomNumber}.png`;
+            const narrowName = `cozy-room-${roomNumber}-narrow.png`;
+
+            return {
+              id: `cozy-room-${roomNumber}`,
+              wide: {
+                name: wideName,
+                uri: webview.asWebviewUri(vscode.Uri.joinPath(backgroundBaseUri, wideName)).toString()
+              },
+              narrow: {
+                name: narrowName,
+                uri: webview.asWebviewUri(vscode.Uri.joinPath(backgroundBaseUri, narrowName)).toString()
+              }
+            };
+          }),
           images: imageBaseUri.toString(),
           frameBaseUri: frameBaseUri.toString(),
           sounds: {
