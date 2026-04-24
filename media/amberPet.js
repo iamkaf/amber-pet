@@ -57,6 +57,15 @@
     minFloorInsetPx: 34,
     settleDistancePx: 0.8,
   };
+  const wanderFeel = {
+    edgeInsetRatio: 0.08,
+    maxDistanceRatio: 0.42,
+    maxDelayMs: 10_000,
+    minDelayMs: 4_000,
+    minDistancePx: 42,
+    speedPxPerMs: 0.034,
+    targetDistanceTolerancePx: 1.2,
+  };
 
   let config = null;
   let manifest = null;
@@ -78,6 +87,10 @@
   let gravityLastAt = undefined;
   let gravityVelocityY = 0;
   let shouldPlayLandingReaction = false;
+  let wanderTimer = undefined;
+  let wanderRaf = undefined;
+  let wanderLastAt = undefined;
+  let wanderTarget = null;
   let lastPointerClientX = undefined;
   let currentPivotY = 1;
   let activeBackgroundLayerIndex = 0;
@@ -420,6 +433,10 @@
       faceLastPointer();
     }
 
+    if (options.mode !== "ambient") {
+      cancelWander();
+    }
+
     clearAnimationTimer();
     currentAnimation = name;
     currentMode = options.mode || "ambient";
@@ -469,6 +486,12 @@
           : "idle";
 
     playAnimation(nextAnimation, { force, mode: "ambient" });
+
+    if (nextAnimation === "sleep") {
+      cancelWander();
+    } else {
+      scheduleWander();
+    }
   }
 
   function playOneShot(name) {
@@ -566,6 +589,7 @@
   }
 
   function resetPosition() {
+    cancelWander();
     cancelGravity();
     window.cancelAnimationFrame(dragRaf);
     dragRaf = undefined;
@@ -577,6 +601,7 @@
     markUserActivity();
     applyPosition();
     scheduleGravity();
+    scheduleWander();
     chooseAmbientAnimation(true);
     postMessage({ type: "interaction", name: "resetPosition" });
   }
@@ -587,6 +612,16 @@
     gravityLastAt = undefined;
     gravityVelocityY = 0;
     shouldPlayLandingReaction = false;
+  }
+
+  function cancelWander() {
+    window.clearTimeout(wanderTimer);
+    window.cancelAnimationFrame(wanderRaf);
+    wanderTimer = undefined;
+    wanderRaf = undefined;
+    wanderLastAt = undefined;
+    wanderTarget = null;
+    pet.classList.remove("is-wandering");
   }
 
   function scheduleGravity(options = {}) {
@@ -629,6 +664,8 @@
         playAnimation("dropRecovery", { force: true, mode: "oneshot", preserveDirection: true });
         playRandomSound(["dropped1", "dropped2"]);
         postMessage({ type: "interaction", name: "drag" });
+      } else {
+        scheduleWander();
       }
 
       return;
@@ -645,6 +682,112 @@
     setPositionFromPixels(currentX, nextY, rect);
     persist();
     gravityRaf = window.requestAnimationFrame(updateGravity);
+  }
+
+  function scheduleWander() {
+    if (!canWander() || wanderTimer !== undefined || wanderRaf !== undefined) {
+      return;
+    }
+
+    const delay =
+      wanderFeel.minDelayMs + Math.random() * (wanderFeel.maxDelayMs - wanderFeel.minDelayMs);
+
+    wanderTimer = window.setTimeout(() => {
+      wanderTimer = undefined;
+      startWander();
+    }, delay);
+  }
+
+  function canWander() {
+    return (
+      !drag && currentMode === "ambient" && currentAnimation !== "sleep" && gravityRaf === undefined
+    );
+  }
+
+  function startWander() {
+    if (!canWander()) {
+      scheduleWander();
+      return;
+    }
+
+    const rect = stageRect();
+    const petBounds = petRect();
+    const halfWidth = petBounds.width / 2;
+    const edgeInset = Math.min(rect.width * wanderFeel.edgeInsetRatio, petBounds.width * 0.35);
+    const minX = halfWidth + edgeInset;
+    const maxX = rect.width - halfWidth - edgeInset;
+
+    if (maxX <= minX) {
+      scheduleWander();
+      return;
+    }
+
+    const currentX = state.x * rect.width;
+    const maxDistance = Math.max(
+      wanderFeel.minDistancePx,
+      rect.width * wanderFeel.maxDistanceRatio,
+    );
+    const minTargetX = Math.max(minX, currentX - maxDistance);
+    const maxTargetX = Math.min(maxX, currentX + maxDistance);
+    let targetX = minTargetX + Math.random() * (maxTargetX - minTargetX);
+
+    if (Math.abs(targetX - currentX) < wanderFeel.minDistancePx) {
+      const direction = currentX < (minX + maxX) / 2 ? 1 : -1;
+      targetX = clamp(currentX + direction * wanderFeel.minDistancePx, minX, maxX);
+    }
+
+    if (Math.abs(targetX - currentX) < wanderFeel.targetDistanceTolerancePx) {
+      scheduleWander();
+      return;
+    }
+
+    setDirection(targetX > currentX ? "-1" : "1");
+    playAnimation("idle", { force: true, mode: "ambient", preserveDirection: true });
+    pet.classList.add("is-wandering");
+    wanderTarget = {
+      x: targetX,
+      y: floorCenterY(rect, petBounds),
+    };
+    wanderLastAt = undefined;
+    wanderRaf = window.requestAnimationFrame(updateWander);
+  }
+
+  function updateWander(timestamp) {
+    wanderRaf = undefined;
+
+    if (!wanderTarget || !canWander()) {
+      cancelWander();
+      scheduleWander();
+      return;
+    }
+
+    const rect = stageRect();
+    const currentX = state.x * rect.width;
+    const currentY = state.y * rect.height;
+    const deltaMs = Math.min(34, timestamp - (wanderLastAt || timestamp));
+    const step = Math.max(16, deltaMs) * wanderFeel.speedPxPerMs;
+    const distanceX = wanderTarget.x - currentX;
+    const nextX =
+      Math.abs(distanceX) <= step ? wanderTarget.x : currentX + Math.sign(distanceX) * step;
+    const nextY = currentY + (wanderTarget.y - currentY) * 0.14;
+
+    setPositionFromPixels(nextX, nextY, rect);
+    persist();
+    wanderLastAt = timestamp;
+
+    if (
+      Math.abs(wanderTarget.x - nextX) <= wanderFeel.targetDistanceTolerancePx &&
+      Math.abs(wanderTarget.y - nextY) <= wanderFeel.targetDistanceTolerancePx
+    ) {
+      pet.classList.remove("is-wandering");
+      wanderTarget = null;
+      wanderLastAt = undefined;
+      chooseAmbientAnimation(true);
+      scheduleWander();
+      return;
+    }
+
+    wanderRaf = window.requestAnimationFrame(updateWander);
   }
 
   function updateDragPosition() {
@@ -709,6 +852,7 @@
 
   function startDrag(event) {
     event.preventDefault();
+    cancelWander();
     cancelGravity();
     clearHoverBounce();
     rememberPointer(event);
@@ -831,6 +975,7 @@
 
     applyPosition();
     scheduleGravity();
+    scheduleWander();
     chooseAmbientAnimation(true);
     window.clearInterval(ambientTimer);
     ambientTimer = window.setInterval(() => chooseAmbientAnimation(), 1_000);

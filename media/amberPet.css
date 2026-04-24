@@ -250,6 +250,10 @@ body {
   animation: none;
 }
 
+.pet.is-wandering .pet-hover-layer {
+  animation: amber-wander-step 520ms ease-in-out infinite;
+}
+
 .pet-direction-layer {
   transform: scaleX(var(--pet-direction));
 }
@@ -398,5 +402,24 @@ body {
 
   75% {
     transform: translateY(-2px) scaleX(.996) scaleY(1.012);
+  }
+}
+
+@keyframes amber-wander-step {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-2px) rotate(-1deg);
+  }
+
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  75% {
+    transform: translateY(-1px) rotate(1deg);
   }
 }

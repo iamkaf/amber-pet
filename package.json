@@ -1,7 +1,7 @@
 {
   "name": "amber-pet",
   "displayName": "Amber Pet",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Spawn an interactive pet inside VS Code.",
   "categories": [
     "Other"
