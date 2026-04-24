@@ -1,9 +1,13 @@
 .vscode/**
 .vscode-test/**
+.codex
 src/**
 node_modules/**
 scripts/**
 *.map
+!dist/extension.js
+!dist/extension.js.map
+dist/*.vsix
 tsconfig.json
 esbuild.mjs
 package-lock.json

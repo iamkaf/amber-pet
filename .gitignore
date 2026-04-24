@@ -1,5 +1,7 @@
 node_modules/
-dist/
+dist/*
+!dist/extension.js
+!dist/extension.js.map
 *.vsix
 .vscode-test/
 .DS_Store
